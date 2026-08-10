@@ -1,6 +1,6 @@
 import { CacheService } from './cache.service';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export class ApiService {
   static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

@@ -1,33 +1,31 @@
-import { createContext, useState, useEffect, ReactNode } from 'react';
-import { Usuario } from '../models/auth.types';
+import { createContext, useState, useEffect, type ReactNode } from 'react';
+import type { User } from '../models/auth.types';
 import { CacheService } from '../services/cache.service';
 
 interface AuthContextType {
-  user: Usuario | null;
+  user: User | null;
   token: string | null;
-  login: (token: string, user: Usuario) => void;
+  login: (token: string, user: User) => void;
   logout: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<Usuario | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-   
-    const cachedAuth = CacheService.get<{ token: string; user: Usuario }>('lasdoscaras_auth');
+    const cachedAuth = CacheService.get<{ token: string; user: User }>('lasdoscaras_auth');
     if (cachedAuth) {
       setToken(cachedAuth.token);
       setUser(cachedAuth.user);
     }
   }, []);
 
-  const login = (newToken: string, newUser: Usuario) => {
+  const login = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);
-    
     CacheService.set('lasdoscaras_auth', { token: newToken, user: newUser });
   };
 
