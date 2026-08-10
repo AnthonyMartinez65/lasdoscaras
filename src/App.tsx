@@ -3,13 +3,19 @@ import { useContext } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Notification from './components/Notification';
-import Login from './pages/Login';
+import Login from './pages/login';
 import Register from './pages/Register';
 import Activate from './pages/Activate';
+import Home from './pages/Home';
 
 const PublicRoute = ({ children }: { children: JSX.Element }) => {
   const { token } = useContext(AuthContext);
   return token ? <Navigate to="/" /> : children;
+};
+
+const PrivateRoute = ({ children }: { children: JSX.Element }) => {
+  const { token } = useContext(AuthContext);
+  return token ? children : <Navigate to="/login" />;
 };
 
 function AppRoutes() {
@@ -20,7 +26,7 @@ function AppRoutes() {
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/activar" element={<PublicRoute><Activate /></PublicRoute>} />
-        <Route path="/" element={<div className="p-8 text-center text-2xl font-bold">¡Bienvenido al Tablero (Home)!</div>} />
+        <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
       </Routes>
     </>
   );
