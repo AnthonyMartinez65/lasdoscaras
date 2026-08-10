@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useContext } from 'react';
+import { useContext, type ReactNode } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Notification from './components/Notification';
@@ -8,14 +8,14 @@ import Register from './pages/Register';
 import Activate from './pages/Activate';
 import Home from './pages/Home';
 
-const PublicRoute = ({ children }: { children: JSX.Element }) => {
+const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
-  return token ? <Navigate to="/" /> : children;
+  return token ? <Navigate to="/" /> : <>{children}</>;
 };
 
-const PrivateRoute = ({ children }: { children: JSX.Element }) => {
+const PrivateRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
-  return token ? children : <Navigate to="/login" />;
+  return token ? <>{children}</> : <Navigate to="/login" />;
 };
 
 function AppRoutes() {
