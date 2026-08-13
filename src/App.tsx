@@ -13,7 +13,7 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
   return token ? <Navigate to="/" /> : <>{children}</>;
 };
 
-const PrivateRoute = ({ children }: { children: ReactNode }) => {
+export const PrivateRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
   return token ? <>{children}</> : <Navigate to="/login" />;
 };
@@ -26,7 +26,7 @@ function AppRoutes() {
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/activar" element={<PublicRoute><Activate /></PublicRoute>} />
-        <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+        <Route path="/" element={<Home />} />
       </Routes>
     </>
   );
