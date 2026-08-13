@@ -1,13 +1,18 @@
 export interface User {
   id: string;
-  name: string;      
+  name: string;
   email: string;
-  role: 'user' | 'superadmin'; 
-  status: 'PENDING' | 'ACTIVE' | 'BANNED'; 
-  createdAt: string; 
+  role: 'USER' | 'SUPERADMIN';
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED';
+  createdAt: string;
 }
 
 export interface AuthResponse {
   token: string;
-  user: User;     
+  user: User;
+}
+
+export interface RegisterResponse {
+  user: User;
+  activationToken: string;
 }
