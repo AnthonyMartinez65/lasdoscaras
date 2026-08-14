@@ -7,6 +7,7 @@ import Login from './pages/login';
 import Register from './pages/Register';
 import Activate from './pages/Activate';
 import Home from './pages/Home';
+import ViewDetail from './pages/ViewDetail';
 
 const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
@@ -27,6 +28,7 @@ function AppRoutes() {
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/activar" element={<PublicRoute><Activate /></PublicRoute>} />
         <Route path="/" element={<Home />} />
+        <Route path="/views/:id" element={<ViewDetail />} />
       </Routes>
     </>
   );

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiService } from '../services/api.service';
 import { CacheService } from '../services/cache.service';
 import type { PoliticalView, ViewSide } from '../models/view.types';
@@ -7,9 +8,6 @@ interface ThemeCardProps {
   view: PoliticalView;
 }
 
-// El backend identifica los lados como "a" (side / postura) y "b"
-// (counterpart / contrapostura) en las rutas de reacciones:
-// POST /api/views/:id/sides/a/like, /sides/b/dislike, etc.
 type SideKey = 'a' | 'b';
 
 export default function ThemeCard({ view }: ThemeCardProps) {
@@ -22,10 +20,6 @@ export default function ThemeCard({ view }: ThemeCardProps) {
 
     const auth = CacheService.get<{ token: string }>('lasdoscaras_auth');
     if (!auth?.token) {
-      // TODO: mostrar una notificación real (vía NotificationContext) y/o
-      // redirigir a /login. Se deja pendiente para el ciclo de "Control de
-      // Errores", donde se conecta el sistema de notificaciones de forma
-      // consistente en toda la app.
       console.warn('Debe iniciar sesión para reaccionar');
       return;
     }
@@ -39,11 +33,6 @@ export default function ThemeCard({ view }: ThemeCardProps) {
         likes: type === 'like' ? prev.likes + 1 : prev.likes,
         dislikes: type === 'dislike' ? prev.dislikes + 1 : prev.dislikes,
       }));
-      // TODO: esto es un incremento optimista simple. El API hace upsert de
-      // la reacción (permite cambiar de like a dislike), así que si el
-      // usuario ya había reaccionado antes el conteo real puede no
-      // coincidir exactamente. Falta que el detalle de la publicación
-      // indique la reacción previa del usuario para reflejarlo bien.
     } catch (err) {
       console.error('Error al reaccionar', err);
     } finally {
@@ -88,11 +77,13 @@ export default function ThemeCard({ view }: ThemeCardProps) {
   return (
     <div className="bg-slate-50 rounded-3xl shadow-lg border border-slate-200 overflow-hidden mb-10 transition-transform hover:-translate-y-1 duration-300">
       <div className="px-8 py-6 border-b border-slate-200 bg-white">
-        <span className="text-xs font-extrabold text-blue-600 tracking-wider uppercase mb-1 block">
-          {view.category?.name}
-        </span>
-        <h3 className="text-2xl font-black text-slate-900 tracking-tight">{side.title} vs {counterpart.title}</h3>
-        <span className="text-xs text-slate-500 font-medium">Por {view.author.name}</span>
+        <Link to={`/views/${view.id}`} className="block hover:opacity-80 transition-opacity">
+          <span className="text-xs font-extrabold text-blue-600 tracking-wider uppercase mb-1 block">
+            {view.category?.name}
+          </span>
+          <h3 className="text-2xl font-black text-slate-900 tracking-tight">{side.title} vs {counterpart.title}</h3>
+          <span className="text-xs text-slate-500 font-medium">Por {view.author.name}</span>
+        </Link>
       </div>
 
       <div className="p-8 flex flex-col md:flex-row gap-6 lg:gap-10">
