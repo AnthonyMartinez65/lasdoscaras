@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SourceBadge from '../components/SourceBadge';
 import CommentThreadCard from '../components/CommentThread';
+import FavoriteButton from '../components/FavoriteButton';
 import { ViewService } from '../services/view.service';
 import { CommentService } from '../services/comment.service';
 import { CacheService } from '../services/cache.service';
@@ -109,24 +110,27 @@ export default function ViewDetail() {
           ← Volver al tablero
         </Link>
 
-        <div className="mb-8">
-          <span className="text-xs font-extrabold text-blue-600 tracking-wider uppercase">
-            {view.category?.name}
-          </span>
-          <h1 className="text-3xl font-black text-slate-900 mt-1">
-            {view.side.title} vs {view.counterpart.title}
-          </h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">Por {view.author.name}</p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <span className="text-xs font-extrabold text-blue-600 tracking-wider uppercase">
+              {view.category?.name}
+            </span>
+            <h1 className="text-3xl font-black text-slate-900 mt-1">
+              {view.side.title} vs {view.counterpart.title}
+            </h1>
+            <p className="text-sm text-slate-500 font-medium mt-1">Por {view.author.name}</p>
 
-          {view.hashtags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {view.hashtags.map(tag => (
-                <span key={tag.id} className="text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1 rounded-full">
-                  #{tag.name}
-                </span>
-              ))}
-            </div>
-          )}
+            {view.hashtags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {view.hashtags.map(tag => (
+                  <span key={tag.id} className="text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1 rounded-full">
+                    #{tag.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <FavoriteButton viewId={view.id} />
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 mb-12">
