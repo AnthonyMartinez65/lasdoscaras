@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SourceBadge from '../components/SourceBadge';
+import CommentThreadCard from '../components/CommentThread';
 import { ViewService } from '../services/view.service';
+import { CommentService } from '../services/comment.service';
+import { CacheService } from '../services/cache.service';
 import type { PoliticalView, ViewSide } from '../models/view.types';
+import type { CommentThread } from '../models/comment.types';
 
 function SideBlock({ data, label, colorClass }: { data: ViewSide; label: string; colorClass: string }) {
   return (
@@ -31,6 +35,8 @@ function SideBlock({ data, label, colorClass }: { data: ViewSide; label: string;
 export default function ViewDetail() {
   const { id } = useParams<{ id: string }>();
   const [view, setView] = useState<PoliticalView | null>(null);
+  const [threads, setThreads] = useState<CommentThread[]>([]);
+  const [newThreadText, setNewThreadText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +55,28 @@ export default function ViewDetail() {
         );
       })
       .finally(() => setLoading(false));
+
+    CommentService.listThreads(id)
+      .then(res => setThreads(res.threads))
+      .catch(() => {
+        // Si fallan los hilos, no bloqueamos el detalle completo — solo esa sección queda vacía.
+      });
   }, [id]);
+
+  const handleNewThread = async () => {
+    if (!id || !newThreadText.trim()) return;
+    if (!CacheService.get<{ token: string }>('lasdoscaras_auth')?.token) {
+      console.warn('Debe iniciar sesión para abrir un hilo');
+      return;
+    }
+    try {
+      const { thread } = await CommentService.createThread(id, { content: newThreadText.trim() });
+      setThreads(prev => [...prev, thread]);
+      setNewThreadText('');
+    } catch (err) {
+      console.error('Error al crear el hilo', err);
+    }
+  };
 
   if (loading) {
     return (
@@ -102,10 +129,37 @@ export default function ViewDetail() {
           )}
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-6 mb-12">
           <SideBlock data={view.side} label="Postura" colorClass="bg-blue-100 text-blue-700" />
           <SideBlock data={view.counterpart} label="Contrapostura" colorClass="bg-purple-100 text-purple-700" />
         </div>
+
+        <section>
+          <h2 className="text-xl font-extrabold text-slate-900 mb-4">Discusión</h2>
+
+          <div className="flex gap-2 mb-6">
+            <input
+              value={newThreadText}
+              onChange={e => setNewThreadText(e.target.value)}
+              placeholder="Abrir un nuevo hilo de discusión..."
+              className="flex-1 border border-slate-300 rounded-xl px-4 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleNewThread}
+              className="bg-blue-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-blue-700"
+            >
+              Publicar
+            </button>
+          </div>
+
+          {threads.length > 0 ? (
+            threads.map(thread => (
+              <CommentThreadCard key={thread.id} viewId={id!} thread={thread} />
+            ))
+          ) : (
+            <p className="text-slate-500 text-sm">Todavía no hay hilos de discusión. ¡Sé el primero!</p>
+          )}
+        </section>
       </main>
     </div>
   );
