@@ -1,20 +1,36 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import ThemeCard from '../components/ThemeCard';
-import { ViewService } from '../services/view.service';
+import FilterPanel from '../components/FilterPanel';
+import { ViewService, type ViewsSort } from '../services/view.service';
+import { CategoryService } from '../services/category.service';
 import type { PoliticalView } from '../models/view.types';
+import type { Category } from '../models/category.types';
 
 export default function Home() {
   const [views, setViews] = useState<PoliticalView[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [sort, setSort] = useState<ViewsSort>('recent');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    CategoryService.list()
+      .then(setCategories)
+      .catch(() => {
+        // Si falla y no hay nada en caché, el selector simplemente queda
+        // con solo la opción "Todas" — no es un error bloqueante para el
+        // tablero.
+      });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    ViewService.list({ sort: 'recent', page: 1, limit: 20 })
+    ViewService.list({ category: selectedCategory || undefined, sort, page: 1, limit: 20 })
       .then(res => {
         if (!cancelled) setViews(res.views);
       })
@@ -26,7 +42,7 @@ export default function Home() {
       });
 
     return () => { cancelled = true; };
-  }, []);
+  }, [selectedCategory, sort]);
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
@@ -36,6 +52,14 @@ export default function Home() {
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Tablero Principal</h1>
           <p className="text-lg text-slate-600 mt-2 font-medium">Explora las dos caras de la moneda en los temas más relevantes.</p>
         </div>
+
+        <FilterPanel
+          categories={categories}
+          selectedCategory={selectedCategory}
+          sort={sort}
+          onCategoryChange={setSelectedCategory}
+          onSortChange={setSort}
+        />
 
         <div>
           {loading ? (
@@ -54,7 +78,7 @@ export default function Home() {
           ) : (
             <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-slate-200">
               <h3 className="text-xl font-bold text-slate-700">No hay publicaciones disponibles</h3>
-              <p className="text-slate-500 mt-2">Todavía no hay publicaciones para mostrar.</p>
+              <p className="text-slate-500 mt-2">Prueba con otros filtros.</p>
             </div>
           )}
         </div>
