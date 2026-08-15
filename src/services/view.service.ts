@@ -1,5 +1,5 @@
 import { ApiService } from './api.service';
-import type { PoliticalView, ViewsListResponse } from '../models/view.types';
+import type { PoliticalView, ViewsListResponse, CreateViewPayload } from '../models/view.types';
 
 export type ViewsSort = 'recent' | 'likes' | 'dislikes';
 
@@ -20,12 +20,17 @@ export class ViewService {
     query.set('page', String(params.page ?? 1));
     query.set('limit', String(params.limit ?? 20));
 
-    // TODO: confirmar el sobre exacto de la respuesta (ver nota en
-    // view.types.ts sobre ViewsListResponse).
     return ApiService.request<ViewsListResponse>(`/api/views?${query.toString()}`);
   }
 
   static async getById(id: string): Promise<{ view: PoliticalView }> {
     return ApiService.request<{ view: PoliticalView }>(`/api/views/${id}`);
+  }
+
+  static async create(payload: CreateViewPayload): Promise<{ view: PoliticalView }> {
+    return ApiService.request<{ view: PoliticalView }>('/api/views', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   }
 }

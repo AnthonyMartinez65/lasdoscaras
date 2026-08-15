@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
@@ -22,21 +22,38 @@ export default function Navbar() {
           </div>
           <div className="flex items-center space-x-4">
             <div className="hidden md:block">
-              <input 
-                type="text" 
-                placeholder="Buscar temas..." 
+              <input
+                type="text"
+                placeholder="Buscar temas..."
                 className="bg-slate-800 text-slate-200 border-none rounded-full px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none w-64"
               />
             </div>
-            <div className="flex items-center space-x-3 border-l border-slate-700 pl-4 ml-2">
-              <span className="text-slate-300 font-medium hidden sm:block">{user?.name || 'Usuario'}</span>
-              <button 
-                onClick={handleLogout}
-                className="text-sm bg-slate-800 hover:bg-slate-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
-              >
-                Salir
-              </button>
-            </div>
+            {user ? (
+              <div className="flex items-center space-x-3 border-l border-slate-700 pl-4 ml-2">
+                <Link
+                  to="/views/new"
+                  className="text-sm bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
+                >
+                  Publicar
+                </Link>
+                <span className="text-slate-300 font-medium hidden sm:block">{user.name}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm bg-slate-800 hover:bg-slate-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
+                >
+                  Salir
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3 border-l border-slate-700 pl-4 ml-2">
+                <Link
+                  to="/login"
+                  className="text-sm bg-slate-800 hover:bg-slate-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
+                >
+                  Iniciar sesión
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
