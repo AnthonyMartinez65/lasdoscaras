@@ -1,4 +1,4 @@
-import { createContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 type NotificationType = 'success' | 'error' | 'info';
 
@@ -7,7 +7,15 @@ interface NotificationState {
   type: NotificationType;
 }
 
-export const NotificationContext = createContext<any>(null);
+interface NotificationContextType {
+  notification: NotificationState | null;
+  showNotification: (msg: string, type?: NotificationType) => void;
+}
+
+export const NotificationContext = createContext<NotificationContextType>({
+  notification: null,
+  showNotification: () => {},
+});
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notification, setNotification] = useState<NotificationState | null>(null);
@@ -23,3 +31,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     </NotificationContext.Provider>
   );
 };
+
+// Hook de conveniencia para no repetir "useContext(NotificationContext)" en
+// cada componente que necesite mostrar una notificación.
+export const useNotification = () => useContext(NotificationContext);

@@ -1,8 +1,11 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import HashtagInput from '../components/HashtagInput';
+import SourceInputList, { type SourceDraft } from '../components/SourceInputList';
 import { ViewService } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
+import { useNotification } from '../context/NotificationContext';
 import type { Category } from '../models/category.types';
 
 interface SideForm {
@@ -12,46 +15,49 @@ interface SideForm {
 
 export default function CreateView() {
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState('');
   const [side, setSide] = useState<SideForm>({ title: '', description: '' });
   const [counterpart, setCounterpart] = useState<SideForm>({ title: '', description: '' });
-  const [hashtagsText, setHashtagsText] = useState('');
+  const [sideSources, setSideSources] = useState<SourceDraft[]>([]);
+  const [counterpartSources, setCounterpartSources] = useState<SourceDraft[]>([]);
+  const [hashtags, setHashtags] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     CategoryService.list().then(setCategories).catch(() => {});
   }, []);
 
+  const validate = (): string | null => {
+    if (!categoryId) return 'Selecciona una categoría.';
+    if (!side.title || !side.description) return 'Completa el título y la descripción de la postura.';
+    if (!counterpart.title || !counterpart.description) return 'Completa el título y la descripción de la contrapostura.';
+    if (sideSources.some(s => !s.url) || counterpartSources.some(s => !s.url)) return 'Cada fuente agregada necesita una URL.';
+    return null;
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!categoryId || !side.title || !side.description || !counterpart.title || !counterpart.description) {
-      setError('Completa todos los campos requeridos.');
+    const validationError = validate();
+    if (validationError) {
+      showNotification(validationError, 'error');
       return;
     }
 
     setSubmitting(true);
-    setError(null);
-
     try {
-      const hashtags = hashtagsText
-        .split(',')
-        .map(h => h.trim())
-        .filter(Boolean);
-
-      // TODO: por ahora se envía sin fuentes (sources: []) — se agrega el
-      // input dinámico de fuentes en el siguiente commit del ciclo.
       const { view } = await ViewService.create({
         categoryId,
-        side: { ...side, sources: [] },
-        counterpart: { ...counterpart, sources: [] },
+        side: { ...side, sources: sideSources },
+        counterpart: { ...counterpart, sources: counterpartSources },
         hashtags,
       });
+      showNotification('Publicación creada con éxito.', 'success');
       navigate(`/views/${view.id}`);
     } catch (err) {
       console.error('Error al crear la publicación', err);
-      setError('No fue posible crear la publicación. Intenta de nuevo.');
+      showNotification('No fue posible crear la publicación. Intenta de nuevo.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -77,13 +83,8 @@ export default function CreateView() {
               ))}
             </select>
 
-            <label className="block text-xs font-bold text-slate-500 uppercase mt-5 mb-1.5">Hashtags (separados por coma)</label>
-            <input
-              value={hashtagsText}
-              onChange={e => setHashtagsText(e.target.value)}
-              placeholder="economia, comercio, aranceles"
-              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label className="block text-xs font-bold text-slate-500 uppercase mt-5 mb-1.5">Hashtags</label>
+            <HashtagInput value={hashtags} onChange={setHashtags} />
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
@@ -101,8 +102,10 @@ export default function CreateView() {
               value={side.description}
               onChange={e => setSide(s => ({ ...s, description: e.target.value }))}
               rows={4}
-              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 mb-5"
             />
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Fuentes</label>
+            <SourceInputList sources={sideSources} onChange={setSideSources} />
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
@@ -120,11 +123,11 @@ export default function CreateView() {
               value={counterpart.description}
               onChange={e => setCounterpart(s => ({ ...s, description: e.target.value }))}
               rows={4}
-              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 mb-5"
             />
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Fuentes</label>
+            <SourceInputList sources={counterpartSources} onChange={setCounterpartSources} />
           </div>
-
-          {error && <p className="text-red-600 font-bold text-sm">{error}</p>}
 
           <button
             type="submit"
