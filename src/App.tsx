@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import ViewDetail from './pages/ViewDetail';
 import CreateView from './pages/CreateView';
 import Profile from './pages/Profile';
+import AuthorProfile from './pages/AuthorProfile';
 
 const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
@@ -30,9 +31,10 @@ function AppRoutes() {
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/activar" element={<PublicRoute><Activate /></PublicRoute>} />
         <Route path="/" element={<Home />} />
-        <Route path="/views/:id" element={<ViewDetail />} />
         <Route path="/views/new" element={<PrivateRoute><CreateView /></PrivateRoute>} />
+        <Route path="/views/:id" element={<ViewDetail />} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+        <Route path="/authors/:id" element={<AuthorProfile />} />
       </Routes>
     </>
   );
