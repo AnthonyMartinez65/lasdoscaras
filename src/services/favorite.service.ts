@@ -18,4 +18,12 @@ export class FavoriteService {
   static async listMine(): Promise<{ favorites: PoliticalView[] }> {
     return ApiService.request<{ favorites: PoliticalView[] }>('/api/users/me/favorites');
   }
+
+  // Devuelve solo los ids como un Set, para que Home y ViewDetail puedan
+  // preguntar "¿esta vista ya es favorita?" en O(1), sin tener que guardar
+  // ni recorrer la lista completa de publicaciones favoritas cada vez.
+  static async getMyFavoriteIds(): Promise<Set<string>> {
+    const { favorites } = await this.listMine();
+    return new Set(favorites.map(v => v.id));
+  }
 }
