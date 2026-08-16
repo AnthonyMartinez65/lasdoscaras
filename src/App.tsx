@@ -11,6 +11,7 @@ import ViewDetail from './pages/ViewDetail';
 import CreateView from './pages/CreateView';
 import Profile from './pages/Profile';
 import AuthorProfile from './pages/AuthorProfile';
+import CategoryPage from './pages/CategoryPage';
 
 const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
@@ -35,6 +36,7 @@ function AppRoutes() {
         <Route path="/views/:id" element={<ViewDetail />} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         <Route path="/authors/:id" element={<AuthorProfile />} />
+        <Route path="/categories/:id" element={<CategoryPage />} />
       </Routes>
     </>
   );
