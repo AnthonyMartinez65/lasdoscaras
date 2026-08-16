@@ -1,4 +1,5 @@
 import { ApiService } from './api.service';
+import type { PoliticalView } from '../models/view.types';
 
 export class FavoriteService {
   static async add(viewId: string): Promise<void> {
@@ -9,11 +10,12 @@ export class FavoriteService {
     await ApiService.request(`/api/views/${viewId}/favorite`, { method: 'DELETE' });
   }
 
-  // TODO: confirmar el endpoint/forma exacta de GET /api/users/me/favorites
-  // para saber, al cargar el tablero o el detalle, cuáles publicaciones ya
-  // tiene marcadas como favoritas el usuario actual (y así mostrar el
-  // corazón "lleno" desde el primer render, no solo después de tocarlo).
-  static async listMine(): Promise<{ favorites: { id: string }[] }> {
-    return ApiService.request<{ favorites: { id: string }[] }>('/api/users/me/favorites');
+  // Corregido: antes se asumía que devolvía solo ids ({ id }[]); tiene más
+  // sentido que devuelva las publicaciones completas, igual que el resto
+  // de los listados del API — así el perfil no tiene que hacer un fetch
+  // extra por cada favorito para poder mostrarlo como card. Sigue siendo
+  // un supuesto sin confirmar contra una respuesta real.
+  static async listMine(): Promise<{ favorites: PoliticalView[] }> {
+    return ApiService.request<{ favorites: PoliticalView[] }>('/api/users/me/favorites');
   }
 }
