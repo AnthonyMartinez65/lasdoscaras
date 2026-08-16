@@ -6,6 +6,7 @@ import CommentThreadCard from '../components/CommentThread';
 import FavoriteButton from '../components/FavoriteButton';
 import { ViewService } from '../services/view.service';
 import { CommentService } from '../services/comment.service';
+import { FavoriteService } from '../services/favorite.service';
 import { CacheService } from '../services/cache.service';
 import type { PoliticalView, ViewSide } from '../models/view.types';
 import type { CommentThread } from '../models/comment.types';
@@ -38,6 +39,7 @@ export default function ViewDetail() {
   const [view, setView] = useState<PoliticalView | null>(null);
   const [threads, setThreads] = useState<CommentThread[]>([]);
   const [newThreadText, setNewThreadText] = useState('');
+  const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +64,12 @@ export default function ViewDetail() {
       .catch(() => {
         // Si fallan los hilos, no bloqueamos el detalle completo — solo esa sección queda vacía.
       });
+
+    if (CacheService.get<{ token: string }>('lasdoscaras_auth')?.token) {
+      FavoriteService.getMyFavoriteIds()
+        .then(ids => setIsFavorited(ids.has(id)))
+        .catch(() => {});
+    }
   }, [id]);
 
   const handleNewThread = async () => {
@@ -130,7 +138,7 @@ export default function ViewDetail() {
               </div>
             )}
           </div>
-          <FavoriteButton viewId={view.id} />
+          <FavoriteButton viewId={view.id} initialFavorited={isFavorited} />
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 mb-12">

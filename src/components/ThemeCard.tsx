@@ -7,11 +7,12 @@ import type { PoliticalView, ViewSide } from '../models/view.types';
 
 interface ThemeCardProps {
   view: PoliticalView;
+  isFavorited?: boolean;
 }
 
 type SideKey = 'a' | 'b';
 
-export default function ThemeCard({ view }: ThemeCardProps) {
+export default function ThemeCard({ view, isFavorited }: ThemeCardProps) {
   const [side, setSide] = useState<ViewSide>(view.side);
   const [counterpart, setCounterpart] = useState<ViewSide>(view.counterpart);
   const [reacting, setReacting] = useState(false);
@@ -85,7 +86,7 @@ export default function ThemeCard({ view }: ThemeCardProps) {
           <h3 className="text-2xl font-black text-slate-900 tracking-tight">{side.title} vs {counterpart.title}</h3>
           <span className="text-xs text-slate-500 font-medium">Por {view.author.name}</span>
         </Link>
-        <FavoriteButton viewId={view.id} />
+        <FavoriteButton viewId={view.id} initialFavorited={isFavorited} />
       </div>
 
       <div className="p-8 flex flex-col md:flex-row gap-6 lg:gap-10">

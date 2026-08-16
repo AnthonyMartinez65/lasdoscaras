@@ -4,12 +4,15 @@ import ThemeCard from '../components/ThemeCard';
 import FilterPanel from '../components/FilterPanel';
 import { ViewService, type ViewsSort } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
+import { FavoriteService } from '../services/favorite.service';
+import { CacheService } from '../services/cache.service';
 import type { PoliticalView } from '../models/view.types';
 import type { Category } from '../models/category.types';
 
 export default function Home() {
   const [views, setViews] = useState<PoliticalView[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sort, setSort] = useState<ViewsSort>('recent');
   const [loading, setLoading] = useState(true);
@@ -18,11 +21,15 @@ export default function Home() {
   useEffect(() => {
     CategoryService.list()
       .then(setCategories)
-      .catch(() => {
-        // Si falla y no hay nada en caché, el selector simplemente queda
-        // con solo la opción "Todas" — no es un error bloqueante para el
-        // tablero.
-      });
+      .catch(() => {});
+
+    if (CacheService.get<{ token: string }>('lasdoscaras_auth')?.token) {
+      FavoriteService.getMyFavoriteIds()
+        .then(setFavoriteIds)
+        .catch(() => {
+          // Si falla, simplemente ningún card arranca marcado como favorito.
+        });
+    }
   }, []);
 
   useEffect(() => {
@@ -73,7 +80,7 @@ export default function Home() {
             </div>
           ) : views.length > 0 ? (
             views.map(view => (
-              <ThemeCard key={view.id} view={view} />
+              <ThemeCard key={view.id} view={view} isFavorited={favoriteIds.has(view.id)} />
             ))
           ) : (
             <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-slate-200">
