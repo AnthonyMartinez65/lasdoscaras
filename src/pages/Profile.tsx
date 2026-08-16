@@ -2,21 +2,41 @@ import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ThemeCard from '../components/ThemeCard';
+import Tabs from '../components/Tabs';
 import { AuthContext } from '../context/AuthContext';
 import { AuthorService } from '../services/author.service';
+import { FavoriteService } from '../services/favorite.service';
 import type { AuthorProfile } from '../models/author.types';
+import type { PoliticalView } from '../models/view.types';
+
+function ViewList({ views, emptyMessage }: { views: PoliticalView[]; emptyMessage: string }) {
+  if (views.length === 0) {
+    return (
+      <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+        <p className="text-slate-500">{emptyMessage}</p>
+      </div>
+    );
+  }
+  return <>{views.map(view => <ThemeCard key={view.id} view={view} />)}</>;
+}
 
 export default function Profile() {
   const { user } = useContext(AuthContext);
   const [profile, setProfile] = useState<AuthorProfile | null>(null);
+  const [favorites, setFavorites] = useState<PoliticalView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    AuthorService.getById(user.id)
-      .then(res => setProfile(res.author))
+
+    Promise.all([
+      AuthorService.getById(user.id).then(res => setProfile(res.author)),
+      FavoriteService.listMine().then(res => setFavorites(res.favorites)).catch(() => {
+        // Si fallan los favoritos, no bloqueamos el resto del perfil.
+      }),
+    ])
       .catch(() => setError('No fue posible cargar tu perfil. Intenta de nuevo.'))
       .finally(() => setLoading(false));
   }, [user]);
@@ -37,23 +57,33 @@ export default function Profile() {
           )}
         </div>
 
-        <h2 className="text-xl font-extrabold text-slate-900 mb-4">Mis publicaciones</h2>
-
         {loading ? (
           <div className="text-center py-16">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
           </div>
         ) : error ? (
           <p className="text-red-600 font-bold">{error}</p>
-        ) : profile && profile.views.length > 0 ? (
-          profile.views.map(view => <ThemeCard key={view.id} view={view} />)
         ) : (
-          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-            <p className="text-slate-500">Todavía no has publicado nada.</p>
-            <Link to="/views/new" className="text-blue-600 font-bold hover:underline mt-2 inline-block">
-              Crear tu primera publicación
-            </Link>
-          </div>
+          <Tabs
+            tabs={[
+              {
+                label: 'Mis publicaciones',
+                content: profile ? (
+                  <ViewList views={profile.views} emptyMessage="Todavía no has publicado nada." />
+                ) : null,
+              },
+              {
+                label: 'Favoritos',
+                content: <ViewList views={favorites} emptyMessage="Todavía no marcaste ninguna publicación como favorita." />,
+              },
+            ]}
+          />
+        )}
+
+        {profile && profile.views.length === 0 && (
+          <Link to="/views/new" className="text-blue-600 font-bold hover:underline mt-4 inline-block">
+            Crear tu primera publicación
+          </Link>
         )}
       </main>
     </div>

@@ -36,7 +36,12 @@ export default function Navbar() {
                 >
                   Publicar
                 </Link>
-                <span className="text-slate-300 font-medium hidden sm:block">{user.name}</span>
+                <Link
+                  to="/profile"
+                  className="text-slate-300 font-medium hidden sm:block hover:text-white transition-colors"
+                >
+                  {user.name}
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="text-sm bg-slate-800 hover:bg-slate-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
