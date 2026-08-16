@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ThemeCard from '../components/ThemeCard';
 import FilterPanel from '../components/FilterPanel';
@@ -10,6 +11,9 @@ import type { PoliticalView } from '../models/view.types';
 import type { Category } from '../models/category.types';
 
 export default function Home() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const hashtag = searchParams.get('hashtag') ?? '';
+
   const [views, setViews] = useState<PoliticalView[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
@@ -37,7 +41,13 @@ export default function Home() {
     setLoading(true);
     setError(null);
 
-    ViewService.list({ category: selectedCategory || undefined, sort, page: 1, limit: 20 })
+    ViewService.list({
+      category: selectedCategory || undefined,
+      hashtag: hashtag || undefined,
+      sort,
+      page: 1,
+      limit: 20,
+    })
       .then(res => {
         if (!cancelled) setViews(res.views);
       })
@@ -49,7 +59,15 @@ export default function Home() {
       });
 
     return () => { cancelled = true; };
-  }, [selectedCategory, sort]);
+  }, [selectedCategory, sort, hashtag]);
+
+  const clearHashtag = () => {
+    setSearchParams(params => {
+      const next = new URLSearchParams(params);
+      next.delete('hashtag');
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
@@ -66,6 +84,8 @@ export default function Home() {
           sort={sort}
           onCategoryChange={setSelectedCategory}
           onSortChange={setSort}
+          activeHashtag={hashtag || undefined}
+          onClearHashtag={clearHashtag}
         />
 
         <div>
