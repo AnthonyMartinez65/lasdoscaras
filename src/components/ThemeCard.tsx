@@ -95,6 +95,19 @@ export default function ThemeCard({ view, isFavorited }: ThemeCardProps) {
           >
             Por {view.author.name}
           </Link>
+          {view.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {view.hashtags.map(tag => (
+                <Link
+                  key={tag.id}
+                  to={`/?hashtag=${encodeURIComponent(tag.name)}`}
+                  className="text-[11px] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-full transition-colors"
+                >
+                  #{tag.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
         <FavoriteButton viewId={view.id} initialFavorited={isFavorited} />
       </div>

@@ -120,9 +120,12 @@ export default function ViewDetail() {
 
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <span className="text-xs font-extrabold text-blue-600 tracking-wider uppercase">
+            <Link
+              to={`/categories/${view.categoryId}`}
+              className="text-xs font-extrabold text-blue-600 tracking-wider uppercase hover:underline"
+            >
               {view.category?.name}
-            </span>
+            </Link>
             <h1 className="text-3xl font-black text-slate-900 mt-1">
               {view.side.title} vs {view.counterpart.title}
             </h1>
@@ -136,9 +139,13 @@ export default function ViewDetail() {
             {view.hashtags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {view.hashtags.map(tag => (
-                  <span key={tag.id} className="text-xs font-bold text-slate-500 bg-slate-200 px-2.5 py-1 rounded-full">
+                  <Link
+                    key={tag.id}
+                    to={`/?hashtag=${encodeURIComponent(tag.name)}`}
+                    className="text-xs font-bold text-slate-500 bg-slate-200 hover:bg-slate-300 px-2.5 py-1 rounded-full transition-colors"
+                  >
                     #{tag.name}
-                  </span>
+                  </Link>
                 ))}
               </div>
             )}
