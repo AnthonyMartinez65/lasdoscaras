@@ -79,13 +79,20 @@ export default function ThemeCard({ view, isFavorited }: ThemeCardProps) {
   return (
     <div className="bg-slate-50 rounded-3xl shadow-lg border border-slate-200 overflow-hidden mb-10 transition-transform hover:-translate-y-1 duration-300">
       <div className="px-8 py-6 border-b border-slate-200 bg-white flex items-start justify-between gap-4">
-        <Link to={`/views/${view.id}`} className="flex-1 hover:opacity-80 transition-opacity">
+        <div className="flex-1">
           <span className="text-xs font-extrabold text-blue-600 tracking-wider uppercase mb-1 block">
             {view.category?.name}
           </span>
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight">{side.title} vs {counterpart.title}</h3>
-          <span className="text-xs text-slate-500 font-medium">Por {view.author.name}</span>
-        </Link>
+          <Link to={`/views/${view.id}`} className="hover:opacity-80 transition-opacity block">
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{side.title} vs {counterpart.title}</h3>
+          </Link>
+          <Link
+            to={`/authors/${view.author.id}`}
+            className="text-xs text-slate-500 font-medium hover:text-blue-600 hover:underline"
+          >
+            Por {view.author.name}
+          </Link>
+        </div>
         <FavoriteButton viewId={view.id} initialFavorited={isFavorited} />
       </div>
 

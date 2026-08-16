@@ -126,7 +126,12 @@ export default function ViewDetail() {
             <h1 className="text-3xl font-black text-slate-900 mt-1">
               {view.side.title} vs {view.counterpart.title}
             </h1>
-            <p className="text-sm text-slate-500 font-medium mt-1">Por {view.author.name}</p>
+            <Link
+              to={`/authors/${view.author.id}`}
+              className="text-sm text-slate-500 font-medium mt-1 inline-block hover:text-blue-600 hover:underline"
+            >
+              Por {view.author.name}
+            </Link>
 
             {view.hashtags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
