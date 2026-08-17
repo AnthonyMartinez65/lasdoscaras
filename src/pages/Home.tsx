@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ThemeCard from '../components/ThemeCard';
 import FilterPanel from '../components/FilterPanel';
+import Pagination from '../components/Pagination';
 import { ViewService, type ViewsSort } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
 import { FavoriteService } from '../services/favorite.service';
@@ -10,11 +11,15 @@ import { CacheService } from '../services/cache.service';
 import type { PoliticalView } from '../models/view.types';
 import type { Category } from '../models/category.types';
 
+const PAGE_SIZE = 20;
+
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const hashtag = searchParams.get('hashtag') ?? '';
 
   const [views, setViews] = useState<PoliticalView[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [categories, setCategories] = useState<Category[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -30,11 +35,13 @@ export default function Home() {
     if (CacheService.get<{ token: string }>('lasdoscaras_auth')?.token) {
       FavoriteService.getMyFavoriteIds()
         .then(setFavoriteIds)
-        .catch(() => {
-          // Si falla, simplemente ningún card arranca marcado como favorito.
-        });
+        .catch(() => {});
     }
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategory, sort, hashtag]);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,11 +52,14 @@ export default function Home() {
       category: selectedCategory || undefined,
       hashtag: hashtag || undefined,
       sort,
-      page: 1,
-      limit: 20,
+      page,
+      limit: PAGE_SIZE,
     })
       .then(res => {
-        if (!cancelled) setViews(res.views);
+        if (!cancelled) {
+          setViews(res.views);
+          setTotal(res.total);
+        }
       })
       .catch(() => {
         if (!cancelled) setError('No fue posible conectar con el servidor. Verifique su conexión e intente de nuevo.');
@@ -59,7 +69,7 @@ export default function Home() {
       });
 
     return () => { cancelled = true; };
-  }, [selectedCategory, sort, hashtag]);
+  }, [selectedCategory, sort, hashtag, page]);
 
   const clearHashtag = () => {
     setSearchParams(params => {
@@ -68,6 +78,8 @@ export default function Home() {
       return next;
     });
   };
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
@@ -99,9 +111,12 @@ export default function Home() {
               <p className="text-red-600 font-bold">{error}</p>
             </div>
           ) : views.length > 0 ? (
-            views.map(view => (
-              <ThemeCard key={view.id} view={view} isFavorited={favoriteIds.has(view.id)} />
-            ))
+            <>
+              {views.map(view => (
+                <ThemeCard key={view.id} view={view} isFavorited={favoriteIds.has(view.id)} />
+              ))}
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </>
           ) : (
             <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-slate-200">
               <h3 className="text-xl font-bold text-slate-700">No hay publicaciones disponibles</h3>
