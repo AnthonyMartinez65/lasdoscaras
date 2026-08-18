@@ -17,8 +17,11 @@ export interface ViewSide {
   title: string;
   description: string;
   sources: Source[];
-  likes: number;
-  dislikes: number;
+
+  likeCount: number;
+  dislikeCount: number;
+
+  myReaction: 'LIKE' | 'DISLIKE' | null;
 }
 
 export type ViewStatus = 'PUBLISHED' | 'UNPUBLISHED';
@@ -31,14 +34,28 @@ export interface ViewAuthor {
 export interface PoliticalView {
   id: string;
   categoryId: string;
-  category?: Category; 
+  authorId: string;
+  category?: Category;
   author: ViewAuthor;
   status: ViewStatus;
-  side: ViewSide; 
-  counterpart: ViewSide; 
+ 
+  sides: ViewSide[];
   hashtags: Hashtag[];
   createdAt: string;
   updatedAt: string;
+
+  totalLikes?: number;
+  totalDislikes?: number;
+  isFavorite?: boolean;
+  _count?: { threads: number };
+}
+
+export function getSide(view: PoliticalView): ViewSide {
+  return view.sides.find(s => s.type === 'SIDE')!;
+}
+
+export function getCounterpart(view: PoliticalView): ViewSide {
+  return view.sides.find(s => s.type === 'COUNTERPART')!;
 }
 
 export interface CreateViewPayload {

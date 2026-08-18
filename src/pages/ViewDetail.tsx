@@ -6,8 +6,8 @@ import CommentThreadCard from '../components/CommentThread';
 import FavoriteButton from '../components/FavoriteButton';
 import { ViewService } from '../services/view.service';
 import { CommentService } from '../services/comment.service';
-import { FavoriteService } from '../services/favorite.service';
 import { CacheService } from '../services/cache.service';
+import { getSide, getCounterpart } from '../models/view.types';
 import type { PoliticalView, ViewSide } from '../models/view.types';
 import type { CommentThread } from '../models/comment.types';
 
@@ -27,8 +27,8 @@ function SideBlock({ data, label, colorClass }: { data: ViewSide; label: string;
         </div>
       )}
       <div className="flex items-center gap-4 text-sm font-bold text-slate-500 border-t border-slate-100 pt-4">
-        <span>👍 {data.likes}</span>
-        <span>👎 {data.dislikes}</span>
+        <span>👍 {data.likeCount}</span>
+        <span>👎 {data.dislikeCount}</span>
       </div>
     </div>
   );
@@ -49,7 +49,10 @@ export default function ViewDetail() {
     setError(null);
 
     ViewService.getById(id)
-      .then(res => setView(res.view))
+      .then(res => {
+        setView(res.view);
+        setIsFavorited(res.view.isFavorite ?? false);
+      })
       .catch((err: { status?: number }) => {
         setError(
           err.status === 404
@@ -64,12 +67,6 @@ export default function ViewDetail() {
       .catch(() => {
         // Si fallan los hilos, no bloqueamos el detalle completo — solo esa sección queda vacía.
       });
-
-    if (CacheService.get<{ token: string }>('lasdoscaras_auth')?.token) {
-      FavoriteService.getMyFavoriteIds()
-        .then(ids => setIsFavorited(ids.has(id)))
-        .catch(() => {});
-    }
   }, [id]);
 
   const handleNewThread = async () => {
@@ -110,6 +107,9 @@ export default function ViewDetail() {
     );
   }
 
+  const side = getSide(view);
+  const counterpart = getCounterpart(view);
+
   return (
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
       <Navbar />
@@ -127,7 +127,7 @@ export default function ViewDetail() {
               {view.category?.name}
             </Link>
             <h1 className="text-3xl font-black text-slate-900 mt-1">
-              {view.side.title} vs {view.counterpart.title}
+              {side.title} vs {counterpart.title}
             </h1>
             <Link
               to={`/authors/${view.author.id}`}
@@ -154,8 +154,8 @@ export default function ViewDetail() {
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 mb-12">
-          <SideBlock data={view.side} label="Postura" colorClass="bg-blue-100 text-blue-700" />
-          <SideBlock data={view.counterpart} label="Contrapostura" colorClass="bg-purple-100 text-purple-700" />
+          <SideBlock data={side} label="Postura" colorClass="bg-blue-100 text-blue-700" />
+          <SideBlock data={counterpart} label="Contrapostura" colorClass="bg-purple-100 text-purple-700" />
         </div>
 
         <section>
