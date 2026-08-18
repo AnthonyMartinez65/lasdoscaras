@@ -1,11 +1,13 @@
 import { useContext, useState, type KeyboardEvent } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import SearchSuggestions from './SearchSuggestions';
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -14,7 +16,10 @@ export default function Navbar() {
 
   const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && query.trim()) {
+      setShowSuggestions(false);
       navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
     }
   };
 
@@ -28,15 +33,20 @@ export default function Navbar() {
             </span>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="hidden md:block">
+            <div className="hidden md:block relative">
               <input
                 type="text"
                 value={query}
-                onChange={e => setQuery(e.target.value)}
+                onChange={e => { setQuery(e.target.value); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setShowSuggestions(false)}
                 onKeyDown={handleSearchKeyDown}
                 placeholder="Buscar temas..."
                 className="bg-slate-800 text-slate-200 border-none rounded-full px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none w-64"
               />
+              {showSuggestions && (
+                <SearchSuggestions query={query} onSelect={() => setShowSuggestions(false)} />
+              )}
             </div>
             {user ? (
               <div className="flex items-center space-x-3 border-l border-slate-700 pl-4 ml-2">
