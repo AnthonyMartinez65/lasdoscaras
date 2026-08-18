@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ApiService } from '../services/api.service';
 import { CacheService } from '../services/cache.service';
 import FavoriteButton from './FavoriteButton';
+import { getSide, getCounterpart } from '../models/view.types';
 import type { PoliticalView, ViewSide } from '../models/view.types';
 
 interface ThemeCardProps {
@@ -13,8 +14,8 @@ interface ThemeCardProps {
 type SideKey = 'a' | 'b';
 
 export default function ThemeCard({ view, isFavorited }: ThemeCardProps) {
-  const [side, setSide] = useState<ViewSide>(view.side);
-  const [counterpart, setCounterpart] = useState<ViewSide>(view.counterpart);
+  const [side, setSide] = useState<ViewSide>(getSide(view));
+  const [counterpart, setCounterpart] = useState<ViewSide>(getCounterpart(view));
   const [reacting, setReacting] = useState(false);
 
   const react = async (sideKey: SideKey, type: 'like' | 'dislike') => {
@@ -32,8 +33,8 @@ export default function ThemeCard({ view, isFavorited }: ThemeCardProps) {
       const setter = sideKey === 'a' ? setSide : setCounterpart;
       setter(prev => ({
         ...prev,
-        likes: type === 'like' ? prev.likes + 1 : prev.likes,
-        dislikes: type === 'dislike' ? prev.dislikes + 1 : prev.dislikes,
+        likeCount: type === 'like' ? prev.likeCount + 1 : prev.likeCount,
+        dislikeCount: type === 'dislike' ? prev.dislikeCount + 1 : prev.dislikeCount,
       }));
     } catch (err) {
       console.error('Error al reaccionar', err);
@@ -62,14 +63,14 @@ export default function ThemeCard({ view, isFavorited }: ThemeCardProps) {
             disabled={reacting}
             className="flex items-center space-x-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors disabled:opacity-50"
           >
-            <span>👍 {data.likes}</span>
+            <span>👍 {data.likeCount}</span>
           </button>
           <button
             onClick={() => react(sideKey, 'dislike')}
             disabled={reacting}
             className="flex items-center space-x-2 text-sm font-bold text-slate-500 hover:text-red-600 transition-colors disabled:opacity-50"
           >
-            <span>👎 {data.dislikes}</span>
+            <span>👎 {data.dislikeCount}</span>
           </button>
         </div>
       </div>

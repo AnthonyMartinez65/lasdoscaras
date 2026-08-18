@@ -37,6 +37,18 @@ export default function CreateView() {
     return null;
   };
 
+  // Corregido: antes se mandaba siempre "label", aunque estuviera vacío
+  // (label: ''), y el backend rechaza una cadena vacía en un campo que
+  // espera texto real o que ni aparezca — igual que en el propio ejemplo
+  // del README, donde la fuente sin etiqueta simplemente omite la llave
+  // "label" por completo.
+  const cleanSources = (sources: SourceDraft[]) =>
+    sources.map(({ type, url, label }) => ({
+      type,
+      url,
+      ...(label.trim() ? { label: label.trim() } : {}),
+    }));
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const validationError = validate();
@@ -49,8 +61,8 @@ export default function CreateView() {
     try {
       const { view } = await ViewService.create({
         categoryId,
-        side: { ...side, sources: sideSources },
-        counterpart: { ...counterpart, sources: counterpartSources },
+        side: { ...side, sources: cleanSources(sideSources) },
+        counterpart: { ...counterpart, sources: cleanSources(counterpartSources) },
         hashtags,
       });
       showNotification('Publicación creada con éxito.', 'success');
