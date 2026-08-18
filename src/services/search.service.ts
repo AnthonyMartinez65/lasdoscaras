@@ -19,4 +19,12 @@ export class SearchService {
     const params = new URLSearchParams({ q: query, sort, page: String(page), limit: String(limit) });
     return ApiService.request<{ views: PoliticalView[]; total: number }>(`/api/search?${params.toString()}`);
   }
+
+  // Búsqueda rápida para el dropdown del navbar — mismo endpoint, límite
+  // chico, sin paginación ni control de orden.
+  static async suggest(query: string, limit = 5): Promise<PoliticalView[]> {
+    if (!query.trim()) return [];
+    const { views } = await this.search({ query, page: 1, limit });
+    return views;
+  }
 }
