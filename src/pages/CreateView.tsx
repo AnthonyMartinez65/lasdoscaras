@@ -37,11 +37,6 @@ export default function CreateView() {
     return null;
   };
 
-  // Corregido: antes se mandaba siempre "label", aunque estuviera vacío
-  // (label: ''), y el backend rechaza una cadena vacía en un campo que
-  // espera texto real o que ni aparezca — igual que en el propio ejemplo
-  // del README, donde la fuente sin etiqueta simplemente omite la llave
-  // "label" por completo.
   const cleanSources = (sources: SourceDraft[]) =>
     sources.map(({ type, url, label }) => ({
       type,

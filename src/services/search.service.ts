@@ -1,30 +1,41 @@
 import { ApiService } from './api.service';
-import type { PoliticalView } from '../models/view.types';
-import type { ViewsSort } from './view.service';
+import type { Category, Hashtag } from '../models/category.types';
+import type { ViewStatus, ViewAuthor, SideType } from '../models/view.types';
 
-export interface SearchParams {
-  query: string;
-  sort?: ViewsSort;
-  page?: number;
-  limit?: number;
+export interface SearchViewSide {
+  type: SideType;
+  title: string;
+}
+
+export interface SearchViewResult {
+  id: string;
+  categoryId: string;
+  authorId: string;
+  status: ViewStatus;
+  createdAt: string;
+  updatedAt: string;
+  category: Category;
+  author: ViewAuthor;
+  sides: SearchViewSide[];
+}
+
+export interface SearchResultsResponse {
+  views: SearchViewResult[];
+  categories: Category[];
+  hashtags: Hashtag[];
+
+  authors: ViewAuthor[];
 }
 
 export class SearchService {
-  // TODO: no hay ejemplo guardado en la colección de Postman para
-  // GET /api/search — se asume el mismo sobre que el resto de los
-  // listados ({ views, total }) y que acepta "sort" igual que
-  // /api/views. Correr el request contra el servidor local antes de
-  // confiar en esto.
-  static async search({ query, sort = 'recent', page = 1, limit = 10 }: SearchParams): Promise<{ views: PoliticalView[]; total: number }> {
-    const params = new URLSearchParams({ q: query, sort, page: String(page), limit: String(limit) });
-    return ApiService.request<{ views: PoliticalView[]; total: number }>(`/api/search?${params.toString()}`);
+  static async search(query: string): Promise<SearchResultsResponse> {
+    const params = new URLSearchParams({ q: query });
+    return ApiService.request<SearchResultsResponse>(`/api/search?${params.toString()}`);
   }
 
-  // Búsqueda rápida para el dropdown del navbar — mismo endpoint, límite
-  // chico, sin paginación ni control de orden.
-  static async suggest(query: string, limit = 5): Promise<PoliticalView[]> {
+  static async suggest(query: string, limit = 5): Promise<SearchViewResult[]> {
     if (!query.trim()) return [];
-    const { views } = await this.search({ query, page: 1, limit });
-    return views;
+    const { views } = await this.search(query);
+    return views.slice(0, limit);
   }
 }
