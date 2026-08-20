@@ -3,11 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ThemeCard from '../components/ThemeCard';
 import { AuthorService } from '../services/author.service';
+import { ViewService } from '../services/view.service';
 import type { AuthorProfile as AuthorProfileType } from '../models/author.types';
+import type { PoliticalView } from '../models/view.types';
 
 export default function AuthorProfile() {
   const { id } = useParams<{ id: string }>();
   const [author, setAuthor] = useState<AuthorProfileType | null>(null);
+  const [views, setViews] = useState<PoliticalView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,8 +19,10 @@ export default function AuthorProfile() {
     setLoading(true);
     setError(null);
 
-    AuthorService.getById(id)
-      .then(res => setAuthor(res.author))
+    Promise.all([
+      AuthorService.getById(id).then(res => setAuthor(res.author)),
+      ViewService.list({ authorId: id, limit: 50 }).then(res => setViews(res.views)),
+    ])
       .catch((err: { status?: number }) => {
         setError(
           err.status === 404
@@ -63,9 +68,9 @@ export default function AuthorProfile() {
         </div>
 
         <h2 className="text-xl font-extrabold text-slate-900 mb-4">Publicaciones</h2>
-
-        {author.views.length > 0 ? (
-          author.views.map(view => <ThemeCard key={view.id} view={view} />)
+       
+        {views.length > 0 ? (
+          views.map(view => <ThemeCard key={view.id} view={view} isFavorited={view.isFavorite} />)
         ) : (
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
             <p className="text-slate-500">Este autor todavía no ha publicado nada.</p>

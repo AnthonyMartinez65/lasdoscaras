@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useState, type ReactNode } from 'react';
 import type { User } from '../models/auth.types';
 import { CacheService } from '../services/cache.service';
 
@@ -12,16 +12,12 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const cachedAuth = CacheService.get<{ token: string; user: User }>('lasdoscaras_auth');
-    if (cachedAuth) {
-      setToken(cachedAuth.token);
-      setUser(cachedAuth.user);
-    }
-  }, []);
+  const [user, setUser] = useState<User | null>(
+    () => CacheService.get<{ token: string; user: User }>('lasdoscaras_auth')?.user ?? null
+  );
+  const [token, setToken] = useState<string | null>(
+    () => CacheService.get<{ token: string; user: User }>('lasdoscaras_auth')?.token ?? null
+  );
 
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);

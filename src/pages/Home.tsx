@@ -6,8 +6,6 @@ import FilterPanel from '../components/FilterPanel';
 import Pagination from '../components/Pagination';
 import { ViewService, type ViewsSort } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
-import { FavoriteService } from '../services/favorite.service';
-import { CacheService } from '../services/cache.service';
 import type { PoliticalView } from '../models/view.types';
 import type { Category } from '../models/category.types';
 
@@ -21,7 +19,6 @@ export default function Home() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sort, setSort] = useState<ViewsSort>('recent');
   const [loading, setLoading] = useState(true);
@@ -31,12 +28,6 @@ export default function Home() {
     CategoryService.list()
       .then(setCategories)
       .catch(() => {});
-
-    if (CacheService.get<{ token: string }>('lasdoscaras_auth')?.token) {
-      FavoriteService.getMyFavoriteIds()
-        .then(setFavoriteIds)
-        .catch(() => {});
-    }
   }, []);
 
   useEffect(() => {
@@ -113,7 +104,7 @@ export default function Home() {
           ) : views.length > 0 ? (
             <>
               {views.map(view => (
-                <ThemeCard key={view.id} view={view} isFavorited={favoriteIds.has(view.id)} />
+                <ThemeCard key={view.id} view={view} isFavorited={view.isFavorite} />
               ))}
               <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             </>
