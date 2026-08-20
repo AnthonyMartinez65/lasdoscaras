@@ -36,15 +36,14 @@ export default function Profile() {
     Promise.all([
       AuthorService.getById(user.id).then(res => setProfile(res.author)),
       ViewService.list({ authorId: user.id, limit: 50 }).then(res => setMyViews(res.views)),
-      FavoriteService.listMine().then(res => setFavorites(res.favorites)).catch(() => {
-        // Si fallan los favoritos, no bloqueamos el resto del perfil.
+      FavoriteService.getMyFavoriteViews().then(setFavorites).catch(() => {
       }),
     ])
       .catch(() => setError('No fue posible cargar tu perfil. Intenta de nuevo.'))
       .finally(() => setLoading(false));
   }, [user]);
 
-  if (!user) return null; // la ruta ya está protegida por PrivateRoute
+  if (!user) return null; 
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
