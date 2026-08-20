@@ -1,4 +1,5 @@
 import { ApiService } from './api.service';
+import { ViewService } from './view.service';
 import type { PoliticalView } from '../models/view.types';
 
 export class FavoriteService {
@@ -10,20 +11,15 @@ export class FavoriteService {
     await ApiService.request(`/api/views/${viewId}/favorite`, { method: 'DELETE' });
   }
 
-  // Corregido: antes se asumía que devolvía solo ids ({ id }[]); tiene más
-  // sentido que devuelva las publicaciones completas, igual que el resto
-  // de los listados del API — así el perfil no tiene que hacer un fetch
-  // extra por cada favorito para poder mostrarlo como card. Sigue siendo
-  // un supuesto sin confirmar contra una respuesta real.
-  static async listMine(): Promise<{ favorites: PoliticalView[] }> {
-    return ApiService.request<{ favorites: PoliticalView[] }>('/api/users/me/favorites');
+  static async listMine(): Promise<{ favorites: string[] }> {
+    return ApiService.request<{ favorites: string[] }>('/api/users/me/favorites');
   }
 
-  // Devuelve solo los ids como un Set, para que Home y ViewDetail puedan
-  // preguntar "¿esta vista ya es favorita?" en O(1), sin tener que guardar
-  // ni recorrer la lista completa de publicaciones favoritas cada vez.
-  static async getMyFavoriteIds(): Promise<Set<string>> {
+  static async getMyFavoriteViews(): Promise<PoliticalView[]> {
     const { favorites } = await this.listMine();
-    return new Set(favorites.map(v => v.id));
+    const results = await Promise.all(
+      favorites.map(id => ViewService.getById(id).then(res => res.view).catch(() => null))
+    );
+    return results.filter((v): v is PoliticalView => v !== null);
   }
 }
