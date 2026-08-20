@@ -5,6 +5,7 @@ import ThemeCard from '../components/ThemeCard';
 import Tabs from '../components/Tabs';
 import { AuthContext } from '../context/AuthContext';
 import { AuthorService } from '../services/author.service';
+import { ViewService } from '../services/view.service';
 import { FavoriteService } from '../services/favorite.service';
 import type { AuthorProfile } from '../models/author.types';
 import type { PoliticalView } from '../models/view.types';
@@ -17,12 +18,13 @@ function ViewList({ views, emptyMessage }: { views: PoliticalView[]; emptyMessag
       </div>
     );
   }
-  return <>{views.map(view => <ThemeCard key={view.id} view={view} />)}</>;
+  return <>{views.map(view => <ThemeCard key={view.id} view={view} isFavorited={view.isFavorite} />)}</>;
 }
 
 export default function Profile() {
   const { user } = useContext(AuthContext);
   const [profile, setProfile] = useState<AuthorProfile | null>(null);
+  const [myViews, setMyViews] = useState<PoliticalView[]>([]);
   const [favorites, setFavorites] = useState<PoliticalView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +35,7 @@ export default function Profile() {
 
     Promise.all([
       AuthorService.getById(user.id).then(res => setProfile(res.author)),
+      ViewService.list({ authorId: user.id, limit: 50 }).then(res => setMyViews(res.views)),
       FavoriteService.listMine().then(res => setFavorites(res.favorites)).catch(() => {
         // Si fallan los favoritos, no bloqueamos el resto del perfil.
       }),
@@ -68,9 +71,7 @@ export default function Profile() {
             tabs={[
               {
                 label: 'Mis publicaciones',
-                content: profile ? (
-                  <ViewList views={profile.views} emptyMessage="Todavía no has publicado nada." />
-                ) : null,
+                content: <ViewList views={myViews} emptyMessage="Todavía no has publicado nada." />,
               },
               {
                 label: 'Favoritos',
@@ -80,7 +81,7 @@ export default function Profile() {
           />
         )}
 
-        {profile && profile.views.length === 0 && (
+        {!loading && myViews.length === 0 && (
           <Link to="/views/new" className="text-blue-600 font-bold hover:underline mt-4 inline-block">
             Crear tu primera publicación
           </Link>

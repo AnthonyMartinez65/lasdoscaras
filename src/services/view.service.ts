@@ -6,6 +6,7 @@ export type ViewsSort = 'recent' | 'likes' | 'dislikes';
 export interface ListViewsParams {
   category?: string;
   hashtag?: string;
+  authorId?: string;
   sort?: ViewsSort;
   page?: number;
   limit?: number;
@@ -16,6 +17,7 @@ export class ViewService {
     const query = new URLSearchParams();
     if (params.category) query.set('category', params.category);
     if (params.hashtag) query.set('hashtag', params.hashtag);
+    if (params.authorId) query.set('autorId', params.authorId);
     query.set('sort', params.sort ?? 'recent');
     query.set('page', String(params.page ?? 1));
     query.set('limit', String(params.limit ?? 20));
