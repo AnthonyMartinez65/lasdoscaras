@@ -1,25 +1,22 @@
-export interface CommentAuthor {
+export interface CommentUser {
   id: string;
   name: string;
 }
 
 export interface Comment {
   id: string;
+  threadId: string;
   content: string;
   parentId: string | null;
-  author: CommentAuthor;
+  user: CommentUser;
   createdAt: string;
-  // TODO: confirmar si el API anida las respuestas dentro de cada comentario
-  // top-level (como se asume acá) o si las devuelve todas planas con
-  // parentId y hay que agruparlas en el cliente. No hay ejemplo guardado en
-  // la colección de Postman para "List Comments".
   replies?: Comment[];
 }
 
 export interface CommentThread {
   id: string;
   title: string | null;
-  viewId: string;
+  politicalViewId: string;
   comments: Comment[];
   createdAt: string;
 }
