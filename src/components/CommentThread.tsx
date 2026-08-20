@@ -15,7 +15,7 @@ function CommentItem({ comment, onReply }: { comment: Comment; onReply: (parentI
   return (
     <div className="border-l-2 border-slate-200 pl-4 py-2">
       <div className="flex items-baseline gap-2">
-        <span className="font-bold text-sm text-slate-800">{comment.author.name}</span>
+        <span className="font-bold text-sm text-slate-800">{comment.user.name}</span>
         <span className="text-xs text-slate-400">{new Date(comment.createdAt).toLocaleDateString()}</span>
       </div>
       <p className="text-sm text-slate-600 mt-1">{comment.content}</p>
@@ -48,13 +48,12 @@ function CommentItem({ comment, onReply }: { comment: Comment; onReply: (parentI
         </div>
       )}
 
-      {/* Solo un nivel de respuestas — así lo modela el backend. */}
       {comment.replies && comment.replies.length > 0 && (
         <div className="mt-2 space-y-2">
           {comment.replies.map(reply => (
             <div key={reply.id} className="border-l-2 border-slate-100 pl-4">
               <div className="flex items-baseline gap-2">
-                <span className="font-bold text-sm text-slate-800">{reply.author.name}</span>
+                <span className="font-bold text-sm text-slate-800">{reply.user.name}</span>
                 <span className="text-xs text-slate-400">{new Date(reply.createdAt).toLocaleDateString()}</span>
               </div>
               <p className="text-sm text-slate-600 mt-1">{reply.content}</p>
@@ -72,7 +71,6 @@ export default function CommentThreadCard({ viewId, thread }: CommentThreadProps
 
   const handleAddComment = async (content: string, parentId?: string) => {
     if (!CacheService.get<{ token: string }>('lasdoscaras_auth')?.token) {
-      // TODO: reemplazar por una notificación real vía NotificationContext.
       console.warn('Debe iniciar sesión para comentar');
       return;
     }
