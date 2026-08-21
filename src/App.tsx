@@ -12,7 +12,7 @@ import CreateView from './pages/CreateView';
 import Profile from './pages/Profile';
 import AuthorProfile from './pages/AuthorProfile';
 import CategoryPage from './pages/CategoryPage';
-import SearchResults from './pages/SearchResults';
+import AdminUsers from './pages/admin/AdminUsers';
 
 const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
@@ -22,6 +22,13 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
 export const PrivateRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
   return token ? <>{children}</> : <Navigate to="/login" />;
+};
+
+export const SuperadminRoute = ({ children }: { children: ReactNode }) => {
+  const { token, user } = useContext(AuthContext);
+  if (!token) return <Navigate to="/login" />;
+  if (user?.role !== 'SUPERADMIN') return <Navigate to="/" />;
+  return <>{children}</>;
 };
 
 function AppRoutes() {
@@ -38,7 +45,7 @@ function AppRoutes() {
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         <Route path="/authors/:id" element={<AuthorProfile />} />
         <Route path="/categories/:id" element={<CategoryPage />} />
-        <Route path="/search" element={<SearchResults />} />
+        <Route path="/admin/users" element={<SuperadminRoute><AdminUsers /></SuperadminRoute>} />
       </Routes>
     </>
   );
