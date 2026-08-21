@@ -56,6 +56,14 @@ export default function Navbar() {
                 >
                   Publicar
                 </Link>
+                {user.role === 'SUPERADMIN' && (
+                  <Link
+                    to="/admin/users"
+                    className="text-sm bg-purple-600 hover:bg-purple-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <Link
                   to="/profile"
                   className="text-slate-300 font-medium hidden sm:block hover:text-white transition-colors"
