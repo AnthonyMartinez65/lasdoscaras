@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import NotFound from './NotFound';
 import SourceBadge from '../components/SourceBadge';
 import CommentThreadCard from '../components/CommentThread';
 import FavoriteButton from '../components/FavoriteButton';
@@ -41,12 +42,14 @@ export default function ViewDetail() {
   const [newThreadText, setNewThreadText] = useState('');
   const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     setError(null);
+    setNotFound(false);
 
     ViewService.getById(id)
       .then(res => {
@@ -54,11 +57,11 @@ export default function ViewDetail() {
         setIsFavorited(res.view.isFavorite ?? false);
       })
       .catch((err: { status?: number }) => {
-        setError(
-          err.status === 404
-            ? 'Esta publicación no existe o fue eliminada.'
-            : 'No fue posible conectar con el servidor. Verifique su conexión e intente de nuevo.'
-        );
+        if (err.status === 404) {
+          setNotFound(true);
+        } else {
+          setError('No fue posible conectar con el servidor. Verifique su conexión e intente de nuevo.');
+        }
       })
       .finally(() => setLoading(false));
 
@@ -93,6 +96,10 @@ export default function ViewDetail() {
         </div>
       </div>
     );
+  }
+
+  if (notFound) {
+    return <NotFound />;
   }
 
   if (error || !view) {

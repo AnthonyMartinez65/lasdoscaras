@@ -16,6 +16,8 @@ import SearchResults from './pages/SearchResults';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminViews from './pages/admin/AdminViews';
+import NotFound from './pages/NotFound';
+import Forbidden from './pages/Forbidden';
 
 const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
@@ -27,10 +29,14 @@ export const PrivateRoute = ({ children }: { children: ReactNode }) => {
   return token ? <>{children}</> : <Navigate to="/login" />;
 };
 
+// Corregido: antes mandaba a "/" en silencio cuando un usuario logueado
+// sin permiso intentaba entrar a /admin/*. Ahora manda a /403, que le
+// explica por qué no puede entrar en vez de simplemente redirigirlo sin
+// decir nada.
 export const SuperAdminRoute = ({ children }: { children: ReactNode }) => {
   const { token, user } = useContext(AuthContext);
   if (!token) return <Navigate to="/login" />;
-  if (user?.role !== 'SUPERADMIN') return <Navigate to="/" />;
+  if (user?.role !== 'SUPERADMIN') return <Navigate to="/403" />;
   return <>{children}</>;
 };
 
@@ -52,6 +58,10 @@ function AppRoutes() {
         <Route path="/admin/users" element={<SuperAdminRoute><AdminUsers /></SuperAdminRoute>} />
         <Route path="/admin/categories" element={<SuperAdminRoute><AdminCategories /></SuperAdminRoute>} />
         <Route path="/admin/views" element={<SuperAdminRoute><AdminViews /></SuperAdminRoute>} />
+        <Route path="/403" element={<Forbidden />} />
+        {/* Tiene que ir al final: es el comodín para cualquier ruta que
+            no calce con ninguna de las anteriores. */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );
