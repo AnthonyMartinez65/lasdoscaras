@@ -2,6 +2,7 @@ import { useContext, useState, type KeyboardEvent } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import SearchSuggestions from './SearchSuggestions';
+import ConfirmButton from './ConfirmButton';
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
@@ -57,20 +58,12 @@ export default function Navbar() {
                   Publicar
                 </Link>
                 {user.role === 'SUPERADMIN' && (
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/admin/users"
-                      className="text-sm bg-purple-600 hover:bg-purple-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
-                    >
-                      Usuarios
-                    </Link>
-                    <Link
-                      to="/admin/categories"
-                      className="text-sm bg-purple-600 hover:bg-purple-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
-                    >
-                      Categorías
-                    </Link>
-                  </div>
+                  <Link
+                    to="/admin/users"
+                    className="text-sm bg-purple-600 hover:bg-purple-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
+                  >
+                    Admin
+                  </Link>
                 )}
                 <Link
                   to="/profile"
@@ -78,12 +71,13 @@ export default function Navbar() {
                 >
                   {user.name}
                 </Link>
-                <button
-                  onClick={handleLogout}
+                <ConfirmButton
+                  onConfirm={handleLogout}
+                  confirmLabel="¿Salir?"
                   className="text-sm bg-slate-800 hover:bg-slate-700 text-white py-1.5 px-3 rounded-lg transition-colors font-bold"
                 >
                   Salir
-                </button>
+                </ConfirmButton>
               </div>
             ) : (
               <div className="flex items-center space-x-3 border-l border-slate-700 pl-4 ml-2">
