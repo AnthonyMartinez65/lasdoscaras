@@ -15,6 +15,7 @@ import CategoryPage from './pages/CategoryPage';
 import SearchResults from './pages/SearchResults';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminCategories from './pages/admin/AdminCategories';
+import AdminViews from './pages/admin/AdminViews';
 
 const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { token } = useContext(AuthContext);
@@ -50,6 +51,7 @@ function AppRoutes() {
         <Route path="/search" element={<SearchResults />} />
         <Route path="/admin/users" element={<SuperAdminRoute><AdminUsers /></SuperAdminRoute>} />
         <Route path="/admin/categories" element={<SuperAdminRoute><AdminCategories /></SuperAdminRoute>} />
+        <Route path="/admin/views" element={<SuperAdminRoute><AdminViews /></SuperAdminRoute>} />
       </Routes>
     </>
   );
