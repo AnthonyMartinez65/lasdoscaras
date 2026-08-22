@@ -8,9 +8,6 @@ interface ConfirmButtonProps {
   disabled?: boolean;
 }
 
-// Reemplaza a window.confirm(), que no está permitido — un primer clic
-// arma la pregunta en el propio botón, y hay 3 segundos para confirmar
-// con un segundo clic antes de que vuelva a su estado normal.
 export default function ConfirmButton({
   onConfirm,
   children,
