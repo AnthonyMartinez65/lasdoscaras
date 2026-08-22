@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import NotFound from './NotFound';
 import ThemeCard from '../components/ThemeCard';
 import { CategoryService } from '../services/category.service';
 import { ViewService } from '../services/view.service';
@@ -12,15 +13,23 @@ export default function CategoryPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [views, setViews] = useState<PoliticalView[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     setError(null);
+    setNotFound(false);
 
     Promise.all([
-      CategoryService.getById(id).then(cat => setCategory(cat ?? null)),
+      CategoryService.getById(id).then(cat => {
+        if (!cat) {
+          setNotFound(true);
+        } else {
+          setCategory(cat);
+        }
+      }),
       ViewService.list({ category: id, sort: 'recent', page: 1, limit: 20 }).then(res => setViews(res.views)),
     ])
       .catch(() => setError('No fue posible conectar con el servidor. Verifique su conexión e intente de nuevo.'))
@@ -38,13 +47,16 @@ export default function CategoryPage() {
     );
   }
 
+  if (notFound) {
+    return <NotFound />;
+  }
+
   if (error) {
     return (
       <div className="min-h-screen bg-slate-100">
         <Navbar />
         <div className="max-w-2xl mx-auto text-center py-24 px-4">
           <p className="text-red-600 font-bold mb-4">{error}</p>
-          <Link to="/" className="text-blue-600 font-bold hover:underline">Volver al tablero</Link>
         </div>
       </div>
     );
@@ -56,7 +68,7 @@ export default function CategoryPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <span className="text-xs font-extrabold text-blue-600 tracking-wider uppercase">Categoría</span>
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-8">
-          {category ? category.name : 'Categoría'}
+          {category?.name}
         </h1>
 
         {views.length > 0 ? (

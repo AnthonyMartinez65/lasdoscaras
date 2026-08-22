@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import NotFound from './NotFound';
 import ThemeCard from '../components/ThemeCard';
 import { AuthorService } from '../services/author.service';
 import { ViewService } from '../services/view.service';
@@ -12,23 +13,25 @@ export default function AuthorProfile() {
   const [author, setAuthor] = useState<AuthorProfileType | null>(null);
   const [views, setViews] = useState<PoliticalView[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     setError(null);
+    setNotFound(false);
 
     Promise.all([
       AuthorService.getById(id).then(res => setAuthor(res.author)),
       ViewService.list({ authorId: id, limit: 50 }).then(res => setViews(res.views)),
     ])
       .catch((err: { status?: number }) => {
-        setError(
-          err.status === 404
-            ? 'Este autor no existe.'
-            : 'No fue posible conectar con el servidor. Verifique su conexión e intente de nuevo.'
-        );
+        if (err.status === 404) {
+          setNotFound(true);
+        } else {
+          setError('No fue posible conectar con el servidor. Verifique su conexión e intente de nuevo.');
+        }
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -44,13 +47,16 @@ export default function AuthorProfile() {
     );
   }
 
+  if (notFound) {
+    return <NotFound />;
+  }
+
   if (error || !author) {
     return (
       <div className="min-h-screen bg-slate-100">
         <Navbar />
         <div className="max-w-2xl mx-auto text-center py-24 px-4">
           <p className="text-red-600 font-bold mb-4">{error}</p>
-          <Link to="/" className="text-blue-600 font-bold hover:underline">Volver al tablero</Link>
         </div>
       </div>
     );
@@ -68,7 +74,7 @@ export default function AuthorProfile() {
         </div>
 
         <h2 className="text-xl font-extrabold text-slate-900 mb-4">Publicaciones</h2>
-       
+
         {views.length > 0 ? (
           views.map(view => <ThemeCard key={view.id} view={view} isFavorited={view.isFavorite} />)
         ) : (
