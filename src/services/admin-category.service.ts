@@ -7,12 +7,16 @@ export class AdminCategoryService {
     return res.categories;
   }
 
-  // TODO: el body exacto de creación no se confirmó contra una respuesta
-  // guardada — se asume { name } porque es el único campo real del
-  // modelo Category (ver schema.prisma: solo id, name y deletedAt).
   static async create(name: string): Promise<{ category: Category }> {
     return ApiService.request<{ category: Category }>('/api/admin/categories', {
       method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  static async update(id: string, name: string): Promise<{ category: Category }> {
+    return ApiService.request<{ category: Category }>(`/api/admin/categories/${id}`, {
+      method: 'PUT',
       body: JSON.stringify({ name }),
     });
   }
