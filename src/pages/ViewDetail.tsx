@@ -40,7 +40,6 @@ export default function ViewDetail() {
   const [view, setView] = useState<PoliticalView | null>(null);
   const [threads, setThreads] = useState<CommentThread[]>([]);
   const [newThreadText, setNewThreadText] = useState('');
-  const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,10 +51,7 @@ export default function ViewDetail() {
     setNotFound(false);
 
     ViewService.getById(id)
-      .then(res => {
-        setView(res.view);
-        setIsFavorited(res.view.isFavorite ?? false);
-      })
+      .then(res => setView(res.view))
       .catch((err: { status?: number }) => {
         if (err.status === 404) {
           setNotFound(true);
@@ -136,6 +132,9 @@ export default function ViewDetail() {
             <h1 className="text-3xl font-black text-slate-900 mt-1">
               {side.title} vs {counterpart.title}
             </h1>
+            <p className="text-xs text-slate-400 font-medium mt-1">
+              Publicado el {new Date(view.createdAt).toLocaleDateString()}
+            </p>
             <Link
               to={`/authors/${view.author.id}`}
               className="text-sm text-slate-500 font-medium mt-1 inline-block hover:text-blue-600 hover:underline"
@@ -157,7 +156,7 @@ export default function ViewDetail() {
               </div>
             )}
           </div>
-          <FavoriteButton viewId={view.id} initialFavorited={isFavorited} />
+          <FavoriteButton viewId={view.id} />
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 mb-12">

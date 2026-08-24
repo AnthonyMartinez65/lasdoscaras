@@ -1,25 +1,26 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { FavoriteService } from '../services/favorite.service';
 import { CacheService } from '../services/cache.service';
 
 interface FavoriteButtonProps {
   viewId: string;
-  initialFavorited?: boolean;
 }
 
-export default function FavoriteButton({ viewId, initialFavorited = false }: FavoriteButtonProps) {
-  const [favorited, setFavorited] = useState(initialFavorited);
+export default function FavoriteButton({ viewId }: FavoriteButtonProps) {
+  const isAuthenticated = !!CacheService.get<{ token: string }>('lasdoscaras_auth')?.token;
+  // El estado inicial se lee directo del caché local, sin pedirle nada
+  // al API — el corazón ya sabe si mostrarse lleno o vacío desde el
+  // primer render.
+  const [favorited, setFavorited] = useState(() => FavoriteService.isCached(viewId));
   const [loading, setLoading] = useState(false);
 
-  const toggle = async (e: React.MouseEvent) => {
+  // Requisito del enunciado: el corazón solo es visible para usuarios
+  // autenticados, no solo deshabilitado para el resto.
+  if (!isAuthenticated) return null;
+
+  const toggle = async (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (!CacheService.get<{ token: string }>('lasdoscaras_auth')?.token) {
-      // TODO: reemplazar por una notificación real vía NotificationContext.
-      console.warn('Debe iniciar sesión para usar favoritos');
-      return;
-    }
 
     if (loading) return;
     setLoading(true);
