@@ -76,7 +76,9 @@ export default function AuthorProfile() {
         <h2 className="text-xl font-extrabold text-slate-900 mb-4">Publicaciones</h2>
 
         {views.length > 0 ? (
-          views.map(view => <ThemeCard key={view.id} view={view} isFavorited={view.isFavorite} />)
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {views.map(view => <ThemeCard key={view.id} view={view} />)}
+          </div>
         ) : (
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
             <p className="text-slate-500">Este autor todavía no ha publicado nada.</p>
