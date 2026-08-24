@@ -10,7 +10,7 @@ export default function AdminNav() {
     <div className="flex gap-2 mb-8">
       <NavLink to="/admin/users" className={linkClass}>Usuarios</NavLink>
       <NavLink to="/admin/categories" className={linkClass}>Categorías</NavLink>
-      <NavLink to="/admin/views" className={linkClass}>Publicaciones</NavLink>
+      <NavLink to="/admin/moderation" className={linkClass}>Publicaciones</NavLink>
     </div>
   );
 }
