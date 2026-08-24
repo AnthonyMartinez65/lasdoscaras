@@ -18,7 +18,11 @@ function ViewList({ views, emptyMessage }: { views: PoliticalView[]; emptyMessag
       </div>
     );
   }
-  return <>{views.map(view => <ThemeCard key={view.id} view={view} isFavorited={view.isFavorite} />)}</>;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {views.map(view => <ThemeCard key={view.id} view={view} />)}
+    </div>
+  );
 }
 
 export default function Profile() {
@@ -37,13 +41,14 @@ export default function Profile() {
       AuthorService.getById(user.id).then(res => setProfile(res.author)),
       ViewService.list({ authorId: user.id, limit: 50 }).then(res => setMyViews(res.views)),
       FavoriteService.getMyFavoriteViews().then(setFavorites).catch(() => {
+        // Si fallan los favoritos, no bloqueamos el resto del perfil.
       }),
     ])
       .catch(() => setError('No fue posible cargar tu perfil. Intenta de nuevo.'))
       .finally(() => setLoading(false));
   }, [user]);
 
-  if (!user) return null; 
+  if (!user) return null; // la ruta ya está protegida por PrivateRoute
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
@@ -52,8 +57,9 @@ export default function Profile() {
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-10">
           <h1 className="text-3xl font-black text-slate-900">{user.name}</h1>
           <p className="text-slate-500 font-medium">{user.email}</p>
+          <p className="text-xs text-slate-400 mt-2 uppercase font-bold tracking-wide">{user.role}</p>
           {profile && (
-            <p className="text-xs text-slate-400 mt-2">
+            <p className="text-xs text-slate-400 mt-1">
               Miembro desde {new Date(profile.createdAt).toLocaleDateString()}
             </p>
           )}

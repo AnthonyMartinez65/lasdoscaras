@@ -91,30 +91,30 @@ export default function Home() {
           onClearHashtag={clearHashtag}
         />
 
-        <div>
-          {loading ? (
-            <div className="text-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-slate-500 mt-4 font-medium">Cargando publicaciones...</p>
-            </div>
-          ) : error ? (
-            <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-red-200">
-              <p className="text-red-600 font-bold">{error}</p>
-            </div>
-          ) : views.length > 0 ? (
-            <>
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-slate-500 mt-4 font-medium">Cargando publicaciones...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-red-200">
+            <p className="text-red-600 font-bold">{error}</p>
+          </div>
+        ) : views.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {views.map(view => (
-                <ThemeCard key={view.id} view={view} isFavorited={view.isFavorite} />
+                <ThemeCard key={view.id} view={view} />
               ))}
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-            </>
-          ) : (
-            <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-slate-200">
-              <h3 className="text-xl font-bold text-slate-700">No hay publicaciones disponibles</h3>
-              <p className="text-slate-500 mt-2">Prueba con otros filtros.</p>
             </div>
-          )}
-        </div>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </>
+        ) : (
+          <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-slate-200">
+            <h3 className="text-xl font-bold text-slate-700">No hay publicaciones disponibles</h3>
+            <p className="text-slate-500 mt-2">Prueba con otros filtros.</p>
+          </div>
+        )}
       </main>
     </div>
   );
