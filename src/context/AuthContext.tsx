@@ -1,6 +1,7 @@
 import { createContext, useState, type ReactNode } from 'react';
 import type { User } from '../models/auth.types';
 import { CacheService } from '../services/cache.service';
+import { FavoriteService } from '../services/favorite.service';
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +24,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(newToken);
     setUser(newUser);
     CacheService.set('lasdoscaras_auth', { token: newToken, user: newUser });
+    // Trae los favoritos reales del usuario apenas inicia sesión, para
+    // que el caché local (lasdoscaras_favorites) no arranque vacío.
+    FavoriteService.syncCache();
   };
 
   const logout = () => {
