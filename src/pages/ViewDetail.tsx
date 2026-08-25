@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import NotFound from './NotFound';
@@ -8,6 +8,7 @@ import FavoriteButton from '../components/FavoriteButton';
 import { ViewService } from '../services/view.service';
 import { CommentService } from '../services/comment.service';
 import { CacheService } from '../services/cache.service';
+import { AuthContext } from '../context/AuthContext';
 import { getSide, getCounterpart } from '../models/view.types';
 import type { PoliticalView, ViewSide } from '../models/view.types';
 import type { CommentThread } from '../models/comment.types';
@@ -37,6 +38,7 @@ function SideBlock({ data, label, colorClass }: { data: ViewSide; label: string;
 
 export default function ViewDetail() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useContext(AuthContext);
   const [view, setView] = useState<PoliticalView | null>(null);
   const [threads, setThreads] = useState<CommentThread[]>([]);
   const [newThreadText, setNewThreadText] = useState('');
@@ -112,6 +114,7 @@ export default function ViewDetail() {
 
   const side = getSide(view);
   const counterpart = getCounterpart(view);
+  const canEdit = user && (user.id === view.author.id || user.role === 'SUPERADMIN');
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
@@ -141,6 +144,14 @@ export default function ViewDetail() {
             >
               Por {view.author.name}
             </Link>
+            {canEdit && (
+              <Link
+                to={`/views/${view.id}/edit`}
+                className="text-sm font-bold text-blue-600 hover:underline mt-1 ml-3 inline-block"
+              >
+                Editar
+              </Link>
+            )}
 
             {view.hashtags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
