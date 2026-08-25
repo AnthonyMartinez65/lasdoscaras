@@ -1,10 +1,11 @@
-import { useState, useEffect, useContext, type FormEvent } from 'react';
+import { useState, useEffect, useRef, useContext, type FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Forbidden from './Forbidden';
 import NotFound from './NotFound';
 import HashtagInput from '../components/HashtagInput';
 import SourceInputList, { type SourceDraft } from '../components/SourceInputList';
+import CancelButton from '../components/CancelButton';
 import { ViewService } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
 import { AuthContext } from '../context/AuthContext';
@@ -35,6 +36,9 @@ export default function EditView() {
   const [notFound, setNotFound] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [dirty, setDirty] = useState(false);
+  const skipNextRef = useRef(true);
+
   useEffect(() => {
     CategoryService.list().then(setCategories).catch(() => {});
   }, []);
@@ -61,6 +65,15 @@ export default function EditView() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (loading) return; // no trackear cambios mientras se cargan los datos iniciales
+    if (skipNextRef.current) {
+      skipNextRef.current = false;
+      return;
+    }
+    setDirty(true);
+  }, [loading, categoryId, side, counterpart, sideSources, counterpartSources, hashtags]);
+
   const cleanSources = (sources: SourceDraft[]) =>
     sources.map(({ type, url, label }) => ({
       type,
@@ -68,11 +81,20 @@ export default function EditView() {
       ...(label.trim() ? { label: label.trim() } : {}),
     }));
 
+  const validate = (): string | null => {
+    if (!categoryId) return 'Selecciona una categoría.';
+    if (!side.title || side.description.length < 100) return 'El argumento de la postura necesita al menos 100 caracteres.';
+    if (!counterpart.title || counterpart.description.length < 100) return 'El argumento de la contrapostura necesita al menos 100 caracteres.';
+    if (sideSources.some(s => !s.url) || counterpartSources.some(s => !s.url)) return 'Cada fuente agregada necesita una URL.';
+    return null;
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!id) return;
-    if (!categoryId || !side.title || !side.description || !counterpart.title || !counterpart.description) {
-      showNotification('Completa todos los campos requeridos.', 'error');
+    const validationError = validate();
+    if (validationError) {
+      showNotification(validationError, 'error');
       return;
     }
 
@@ -107,7 +129,6 @@ export default function EditView() {
 
   if (notFound) return <NotFound />;
 
-  // Solo el autor de la publicación o un superadmin pueden editarla.
   const canEdit = user && (user.id === authorId || user.role === 'SUPERADMIN');
   if (!canEdit) return <Forbidden />;
 
@@ -145,7 +166,12 @@ export default function EditView() {
               onChange={e => setSide(s => ({ ...s, title: e.target.value }))}
               className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 mb-4"
             />
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Descripción</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
+              Descripción{' '}
+              <span className="text-slate-400 normal-case font-normal">
+                (mínimo 100 caracteres — llevas {side.description.length})
+              </span>
+            </label>
             <textarea
               value={side.description}
               onChange={e => setSide(s => ({ ...s, description: e.target.value }))}
@@ -166,7 +192,12 @@ export default function EditView() {
               onChange={e => setCounterpart(s => ({ ...s, title: e.target.value }))}
               className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 mb-4"
             />
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Descripción</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
+              Descripción{' '}
+              <span className="text-slate-400 normal-case font-normal">
+                (mínimo 100 caracteres — llevas {counterpart.description.length})
+              </span>
+            </label>
             <textarea
               value={counterpart.description}
               onChange={e => setCounterpart(s => ({ ...s, description: e.target.value }))}
@@ -177,13 +208,20 @@ export default function EditView() {
             <SourceInputList sources={counterpartSources} onChange={setCounterpartSources} />
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="bg-blue-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50"
-          >
-            {submitting ? 'Guardando...' : 'Guardar cambios'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="bg-blue-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50"
+            >
+              {submitting ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+            <CancelButton
+              isDirty={dirty}
+              to={`/views/${id}`}
+              className="text-sm font-bold text-slate-500 hover:text-slate-700 px-4 py-3"
+            />
+          </div>
         </form>
       </main>
     </div>
