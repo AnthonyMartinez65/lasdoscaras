@@ -35,4 +35,11 @@ export class ViewService {
       body: JSON.stringify(payload),
     });
   }
+
+  static async update(id: string, payload: CreateViewPayload): Promise<{ view: PoliticalView }> {
+    return ApiService.request<{ view: PoliticalView }>(`/api/views/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
 }

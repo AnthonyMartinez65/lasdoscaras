@@ -35,10 +35,13 @@ export class FavoriteService {
   // lo consulta directamente para saber si mostrarse lleno o vacío, sin
   // pedirle nada al API en cada render.
 
-  static getCachedIds(): Set<string> {
-    const ids = CacheService.get<string[]>(FAVORITES_CACHE_KEY);
-    return new Set(ids ?? []);
-  }
+static getCachedIds(): Set<string> {
+  const ids = CacheService.get<unknown>(FAVORITES_CACHE_KEY);
+  
+  const safeIds = Array.isArray(ids) ? ids : [];
+  
+  return new Set(safeIds);
+}
 
   static isCached(viewId: string): boolean {
     return this.getCachedIds().has(viewId);
@@ -56,16 +59,11 @@ export class FavoriteService {
     CacheService.set(FAVORITES_CACHE_KEY, Array.from(ids));
   }
 
-  // Sincroniza el caché completo contra el API — se llama justo después
-  // del login, para que el caché arranque con los favoritos reales en
-  // vez de vacío.
   static async syncCache(): Promise<void> {
     try {
       const { favorites } = await this.listMine();
       CacheService.set(FAVORITES_CACHE_KEY, favorites);
     } catch {
-      // Si falla, dejamos el caché como estaba — no es crítico para
-      // poder seguir usando la app.
     }
   }
 }
