@@ -24,8 +24,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(newToken);
     setUser(newUser);
     CacheService.set('lasdoscaras_auth', { token: newToken, user: newUser });
-    // Trae los favoritos reales del usuario apenas inicia sesión, para
-    // que el caché local (lasdoscaras_favorites) no arranque vacío.
     FavoriteService.syncCache();
   };
 
@@ -34,6 +32,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     CacheService.remove('lasdoscaras_auth');
     CacheService.remove('lasdoscaras_favorites');
+    // El historial de navegación es información personal — no debería
+    // quedar visible para la siguiente persona que use el mismo navegador.
+    CacheService.remove('lasdoscaras_history');
   };
 
   return (

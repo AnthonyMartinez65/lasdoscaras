@@ -8,6 +8,7 @@ import FavoriteButton from '../components/FavoriteButton';
 import { ViewService } from '../services/view.service';
 import { CommentService } from '../services/comment.service';
 import { CacheService } from '../services/cache.service';
+import { HistoryService } from '../services/history.service';
 import { AuthContext } from '../context/AuthContext';
 import { getSide, getCounterpart } from '../models/view.types';
 import type { PoliticalView, ViewSide } from '../models/view.types';
@@ -53,7 +54,16 @@ export default function ViewDetail() {
     setNotFound(false);
 
     ViewService.getById(id)
-      .then(res => setView(res.view))
+      .then(res => {
+        setView(res.view);
+        const s = getSide(res.view);
+        const c = getCounterpart(res.view);
+        HistoryService.record({
+          viewId: res.view.id,
+          title: `${s.title} vs ${c.title}`,
+          category: res.view.category?.name ?? '',
+        });
+      })
       .catch((err: { status?: number }) => {
         if (err.status === 404) {
           setNotFound(true);
