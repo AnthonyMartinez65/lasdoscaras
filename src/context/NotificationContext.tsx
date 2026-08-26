@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
-type NotificationType = 'success' | 'error' | 'info';
+type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
 interface NotificationState {
   msg: string;
@@ -17,12 +17,22 @@ export const NotificationContext = createContext<NotificationContextType>({
   showNotification: () => {},
 });
 
+// Duraciones diferenciadas segun el enunciado:
+// errores/warnings: 4s (el usuario necesita leerlos)
+// exito/info: 2.5s
+const DURATIONS: Record<NotificationType, number> = {
+  error: 4000,
+  warning: 4000,
+  success: 2500,
+  info: 2500,
+};
+
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notification, setNotification] = useState<NotificationState | null>(null);
 
   const showNotification = (msg: string, type: NotificationType = 'info') => {
     setNotification({ msg, type });
-    setTimeout(() => setNotification(null), 4000);
+    setTimeout(() => setNotification(null), DURATIONS[type]);
   };
 
   return (
@@ -32,6 +42,4 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook de conveniencia para no repetir "useContext(NotificationContext)" en
-// cada componente que necesite mostrar una notificación.
 export const useNotification = () => useContext(NotificationContext);
