@@ -25,12 +25,14 @@ export class AdminCategoryService {
       method: 'PUT',
       body: JSON.stringify({ name }),
     });
+    
     CacheService.remove(CATEGORIES_CACHE_KEY);
     return res;
   }
 
   static async remove(id: string): Promise<void> {
     await ApiService.request(`/api/admin/categories/${id}`, { method: 'DELETE' });
+    
     CacheService.remove(CATEGORIES_CACHE_KEY);
   }
 }

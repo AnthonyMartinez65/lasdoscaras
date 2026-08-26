@@ -13,7 +13,8 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate('/'); 
+    // AQUÍ ESTÁ LA CORRECCIÓN: Redirige a /login
+    navigate('/login'); 
   };
 
   const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
