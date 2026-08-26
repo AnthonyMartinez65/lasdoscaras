@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import SearchSuggestions from './SearchSuggestions';
 import ConfirmButton from './ConfirmButton';
+import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
@@ -34,6 +35,7 @@ export default function Navbar() {
             </span>
           </div>
           <div className="flex items-center space-x-4">
+            <ThemeToggle />
             <div className="hidden md:block relative">
               <input
                 type="text"
