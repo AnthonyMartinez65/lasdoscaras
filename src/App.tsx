@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useContext, type ReactNode } from 'react';
+import { useContext, useState, useEffect, type ReactNode } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Notification from './components/Notification';
@@ -37,9 +37,44 @@ export const SuperAdminRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
+// Banner de modo offline — se muestra encima de todo cuando el navegador
+// detecta que no hay conexion, y desaparece automaticamente al reconectar.
+function OfflineBanner() {
+  const [offline, setOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const goOffline = () => setOffline(true);
+    const goOnline = () => {
+      setOffline(false);
+      // Recargar datos frescos tras recuperar conexion
+      window.dispatchEvent(new CustomEvent('app:online'));
+    };
+
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online', goOnline);
+
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online', goOnline);
+    };
+  }, []);
+
+  if (!offline) return null;
+
+  return (
+    <div
+      role="alert"
+      className="fixed top-0 inset-x-0 bg-amber-500 text-white text-center text-sm font-bold py-2 z-[200]"
+    >
+      Sin conexion a internet — mostrando informacion guardada.
+    </div>
+  );
+}
+
 function AppRoutes() {
   return (
     <>
+      <OfflineBanner />
       <Notification />
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />

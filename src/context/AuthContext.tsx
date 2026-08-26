@@ -1,7 +1,8 @@
-import { createContext, useState, type ReactNode } from 'react';
+import { createContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../models/auth.types';
 import { CacheService } from '../services/cache.service';
 import { FavoriteService } from '../services/favorite.service';
+import { setOnUnauthorized } from '../services/api.service';
 
 interface AuthContextType {
   user: User | null;
@@ -32,10 +33,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     CacheService.remove('lasdoscaras_auth');
     CacheService.remove('lasdoscaras_favorites');
-    // El historial de navegación es información personal — no debería
-    // quedar visible para la siguiente persona que use el mismo navegador.
     CacheService.remove('lasdoscaras_history');
   };
+
+  // Registrar el callback global para que api.service pueda limpiar la
+  // sesion cuando recibe un 401 sin depender de React Context.
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      logout();
+      window.location.href = '/login';
+    });
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>
