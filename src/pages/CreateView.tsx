@@ -1,176 +1,169 @@
-import { useState, useEffect, useRef, type FormEvent } from 'react';
+import { useState, useEffect, type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import HashtagInput from '../components/HashtagInput';
-import SourceInputList, { type SourceDraft } from '../components/SourceInputList';
-import CancelButton from '../components/CancelButton';
 import { ViewService } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
 import { useNotification } from '../context/NotificationContext';
 import type { Category } from '../models/category.types';
 
-interface SideForm {
-  title: string;
-  description: string;
-}
-
 export default function CreateView() {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState('');
-  const [side, setSide] = useState<SideForm>({ title: '', description: '' });
-  const [counterpart, setCounterpart] = useState<SideForm>({ title: '', description: '' });
-  const [sideSources, setSideSources] = useState<SourceDraft[]>([]);
-  const [counterpartSources, setCounterpartSources] = useState<SourceDraft[]>([]);
-  const [hashtags, setHashtags] = useState<string[]>([]);
-  const [submitting, setSubmitting] = useState(false);
+  const [hashtags, setHashtags] = useState('');
 
-  const [dirty, setDirty] = useState(false);
-  const skipNextRef = useRef(true);
+  const [sideATitle, setSideATitle] = useState('');
+  const [sideADesc, setSideADesc] = useState('');
+
+  const [sideBTitle, setSideBTitle] = useState('');
+  const [sideBDesc, setSideBDesc] = useState('');
+
+  // Rastrear si hay cambios para confirmar antes de cancelar
+  const isDirty = sideATitle || sideADesc || sideBTitle || sideBDesc || hashtags || categoryId;
 
   useEffect(() => {
-    CategoryService.list().then(setCategories).catch(() => {});
+    CategoryService.list().then(setCategories).catch(() => { });
   }, []);
 
-  useEffect(() => {
-    if (skipNextRef.current) {
-      skipNextRef.current = false;
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (sideADesc.length < 100 || sideBDesc.length < 100) {
+      showNotification('La descripción de cada postura debe tener al menos 100 caracteres.', 'warning');
       return;
     }
-    setDirty(true);
-  }, [categoryId, side, counterpart, sideSources, counterpartSources, hashtags]);
 
-  const validate = (): string | null => {
-    if (!categoryId) return 'Selecciona una categoría.';
-    if (!side.title || side.description.length < 100) return 'El argumento de la postura necesita al menos 100 caracteres.';
-    if (!counterpart.title || counterpart.description.length < 100) return 'El argumento de la contrapostura necesita al menos 100 caracteres.';
-    if (sideSources.some(s => !s.url) || counterpartSources.some(s => !s.url)) return 'Cada fuente agregada necesita una URL.';
-    return null;
+    try {
+      const payload = {
+        categoryId,
+        hashtags: hashtags.split(',').map(t => t.trim()).filter(Boolean),
+        // En lugar de un arreglo 'sides', envía 'side' y 'counterpart' por separado
+        side: {
+          title: sideATitle,
+          description: sideADesc,
+          sources: []
+        },
+        counterpart: {
+          title: sideBTitle,
+          description: sideBDesc,
+          sources: []
+        }
+      };
+
+      const { view } = await ViewService.create(payload);
+      showNotification('¡Publicación creada exitosamente!', 'success');
+      navigate(`/views/${view.id}`);
+    } catch (err: any) {
+      showNotification(err.message || 'Error al crear la publicación', 'error');
+    }
+
   };
 
-  const cleanSources = (sources: SourceDraft[]) =>
-    sources.map(({ type, url, label }) => ({
-      type,
-      url,
-      ...(label.trim() ? { label: label.trim() } : {}),
-    }));
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const validationError = validate();
-    if (validationError) {
-      showNotification(validationError, 'error');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const { view } = await ViewService.create({
-        categoryId,
-        side: { ...side, sources: cleanSources(sideSources) },
-        counterpart: { ...counterpart, sources: cleanSources(counterpartSources) },
-        hashtags,
-      });
-      showNotification('Publicación creada con éxito.', 'success');
-      navigate(`/views/${view.id}`);
-    } catch (err) {
-      console.error('Error al crear la publicación', err);
-      showNotification('No fue posible crear la publicación. Intenta de nuevo.', 'error');
-    } finally {
-      setSubmitting(false);
+  const handleCancel = () => {
+    if (isDirty) {
+      if (window.confirm('Tienes cambios sin guardar. ¿Seguro que deseas cancelar?')) {
+        navigate(-1);
+      }
+    } else {
+      navigate(-1);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans pb-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
       <Navbar />
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h1 className="text-3xl font-black text-slate-900 mb-8">Nueva Publicación</h1>
+      <main className="max-w-4xl mx-auto px-4 mt-8">
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-6">Nueva Publicación</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Categoría</label>
-            <select
-              value={categoryId}
-              onChange={e => setCategoryId(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500"
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Categoría</label>
+              <select
+                value={categoryId}
+                onChange={e => setCategoryId(e.target.value)}
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 bg-white dark:bg-slate-700"
+                required
+              >
+                <option value="">Seleccione una categoría</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hashtags (separados por coma)</label>
+              <input
+                value={hashtags}
+                onChange={e => setHashtags(e.target.value)}
+                placeholder="politica, debate, 2026"
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 bg-white dark:bg-slate-700"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50">
+              <h2 className="text-lg font-bold text-blue-700 dark:text-blue-300 mb-4">Postura (Lado A)</h2>
+              <input
+                value={sideATitle}
+                onChange={e => setSideATitle(e.target.value)}
+                placeholder="Título de la postura"
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 mb-4 bg-white dark:bg-slate-700"
+                required
+              />
+              <textarea
+                value={sideADesc}
+                onChange={e => setSideADesc(e.target.value)}
+                placeholder="Describe la postura (mínimo 100 caracteres)..."
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 h-40 bg-white dark:bg-slate-700"
+                required
+                minLength={100}
+              />
+              <div className="text-right text-xs text-slate-500 mt-1">
+                {sideADesc.length} / 100 min
+              </div>
+            </div>
+
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-900/50">
+              <h2 className="text-lg font-bold text-purple-700 dark:text-purple-300 mb-4">Contrapostura (Lado B)</h2>
+              <input
+                value={sideBTitle}
+                onChange={e => setSideBTitle(e.target.value)}
+                placeholder="Título de la contrapostura"
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 mb-4 bg-white dark:bg-slate-700"
+                required
+              />
+              <textarea
+                value={sideBDesc}
+                onChange={e => setSideBDesc(e.target.value)}
+                placeholder="Describe la contrapostura (mínimo 100 caracteres)..."
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 h-40 bg-white dark:bg-slate-700"
+                required
+                minLength={100}
+              />
+              <div className="text-right text-xs text-slate-500 mt-1">
+                {sideBDesc.length} / 100 min
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-4 border-t border-slate-100 dark:border-slate-700 pt-4">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-6 py-2 rounded-xl text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700"
             >
-              <option value="">Selecciona una categoría</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-
-            <label className="block text-xs font-bold text-slate-500 uppercase mt-5 mb-1.5">Hashtags</label>
-            <HashtagInput value={hashtags} onChange={setHashtags} />
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <span className="inline-block px-3 py-1 text-xs font-extrabold uppercase rounded-full bg-blue-100 text-blue-700 mb-4">
-              Postura
-            </span>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Título</label>
-            <input
-              value={side.title}
-              onChange={e => setSide(s => ({ ...s, title: e.target.value }))}
-              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            />
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
-              Descripción{' '}
-              <span className="text-slate-400 normal-case font-normal">
-                (mínimo 100 caracteres — llevas {side.description.length})
-              </span>
-            </label>
-            <textarea
-              value={side.description}
-              onChange={e => setSide(s => ({ ...s, description: e.target.value }))}
-              rows={4}
-              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 mb-5"
-            />
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Fuentes</label>
-            <SourceInputList sources={sideSources} onChange={setSideSources} />
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <span className="inline-block px-3 py-1 text-xs font-extrabold uppercase rounded-full bg-purple-100 text-purple-700 mb-4">
-              Contrapostura
-            </span>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Título</label>
-            <input
-              value={counterpart.title}
-              onChange={e => setCounterpart(s => ({ ...s, title: e.target.value }))}
-              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            />
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
-              Descripción{' '}
-              <span className="text-slate-400 normal-case font-normal">
-                (mínimo 100 caracteres — llevas {counterpart.description.length})
-              </span>
-            </label>
-            <textarea
-              value={counterpart.description}
-              onChange={e => setCounterpart(s => ({ ...s, description: e.target.value }))}
-              rows={4}
-              className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 mb-5"
-            />
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Fuentes</label>
-            <SourceInputList sources={counterpartSources} onChange={setCounterpartSources} />
-          </div>
-
-          <div className="flex items-center gap-3">
+              Cancelar
+            </button>
             <button
               type="submit"
-              disabled={submitting}
-              className="bg-blue-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50"
+              className="px-6 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700"
             >
-              {submitting ? 'Publicando...' : 'Publicar'}
+              Publicar
             </button>
-            <CancelButton
-              isDirty={dirty}
-              to="/"
-              className="text-sm font-bold text-slate-500 hover:text-slate-700 px-4 py-3"
-            />
           </div>
         </form>
       </main>
