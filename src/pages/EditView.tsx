@@ -9,6 +9,11 @@ import { useNotification } from '../context/NotificationContext';
 import { AuthContext } from '../context/AuthContext';
 import type { Category } from '../models/category.types';
 
+/**
+ * Página de Edición de Publicación.
+ * Permite al autor original o a un SUPERADMIN editar un debate existente.
+ * Valida los permisos de acceso al cargar los datos.
+ */
 export default function EditView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -39,7 +44,7 @@ export default function EditView() {
       ViewService.getById(id)
     ])
       .then(([cats, { view }]) => {
-        // Verificar permisos
+        // Validación de permisos: Solo el autor o un superadmin pueden editar
         if (user?.id !== view.author.id && user?.role !== 'SUPERADMIN') {
           navigate('/403');
           return;
@@ -47,7 +52,7 @@ export default function EditView() {
 
         setCategories(cats);
         setCategoryId(view.categoryId || '');
-        setHashtags(view.hashtags.map(h => h.name));
+        setHashtags((view.hashtags || []).map(h => h.name));
 
         const sideA = view.sides.find(s => s.type === 'SIDE');
         const sideB = view.sides.find(s => s.type === 'COUNTERPART');
@@ -139,7 +144,7 @@ export default function EditView() {
       showNotification('¡Publicación actualizada!', 'success');
       setInitialData({
         categoryId: view.categoryId || '',
-        hashtags: JSON.stringify(view.hashtags.map(h => h.name)),
+        hashtags: JSON.stringify((view.hashtags || []).map(h => h.name)),
         sideATitle: sideATitle,
         sideADesc: sideADesc,
         sideBTitle: sideBTitle,
@@ -206,12 +211,12 @@ export default function EditView() {
               <span className="inline-block px-3 py-1 bg-blue-600 text-white text-xs font-black rounded-full mb-3 uppercase tracking-wider">
                 Postura A
               </span>
-              <input
-                type="text"
+              <textarea
+                rows={2}
                 value={sideATitle}
                 onChange={e => setSideATitle(e.target.value)}
                 placeholder="Título corto de esta postura..."
-                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700"
+                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700 resize-none"
                 required
                 maxLength={120}
               />
@@ -236,12 +241,12 @@ export default function EditView() {
               <span className="inline-block px-3 py-1 bg-purple-600 text-white text-xs font-black rounded-full mb-3 uppercase tracking-wider">
                 Contrapostura B
               </span>
-              <input
-                type="text"
+              <textarea
+                rows={2}
                 value={sideBTitle}
                 onChange={e => setSideBTitle(e.target.value)}
                 placeholder="Título de la postura contraria..."
-                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700"
+                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700 resize-none"
                 required
                 maxLength={120}
               />

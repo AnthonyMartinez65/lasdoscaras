@@ -3,6 +3,11 @@ import { CommentService } from '../services/comment.service';
 import { CacheService } from '../services/cache.service';
 import type { CommentThread as CommentThreadType, Comment } from '../models/comment.types';
 
+/**
+ * Componente de Hilo de Comentarios.
+ * Renderiza la discusión en forma de árbol (comentarios y respuestas),
+ * consumiendo el API a través del CommentService.
+ */
 interface CommentThreadProps {
   viewId: string;
   thread: CommentThreadType;

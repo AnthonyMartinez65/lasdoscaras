@@ -1,3 +1,8 @@
+/**
+ * Servicio de Favoritos.
+ * Maneja la lógica de agregar/quitar favoritos tanto en el backend (API)
+ * como en el caché local (localStorage) para mantener la UI rápida y sincronizada.
+ */
 import { ApiService } from './api.service';
 import { CacheService } from './cache.service';
 import { ViewService } from './view.service';
@@ -20,8 +25,11 @@ export class FavoriteService {
     return ApiService.request<{ favorites: string[] }>('/api/users/me/favorites');
   }
 
-  // Trae la publicación completa de cada id favorito, en paralelo, para
-  // poder mostrarlas como cards en la pestaña "Favoritos" del perfil.
+  /**
+   * Obtiene la lista completa de publicaciones favoritas del usuario actual.
+   * Realiza peticiones en paralelo (Promise.all) para hidratar los IDs devueltos
+   * por el API en objetos PoliticalView completos.
+   */
   static async getMyFavoriteViews(): Promise<PoliticalView[]> {
     const { favorites } = await this.listMine();
     const results = await Promise.all(
@@ -30,10 +38,10 @@ export class FavoriteService {
     return results.filter((v): v is PoliticalView => v !== null);
   }
 
-  // --- Caché local (lasdoscaras_favorites) ---
-  // Guarda solo los ids favoritos del usuario actual. Cada FavoriteButton
-  // lo consulta directamente para saber si mostrarse lleno o vacío, sin
-  // pedirle nada al API en cada render.
+  // --- Manejo de Caché Local (lasdoscaras_favorites) ---
+  // Guarda un array de IDs de las publicaciones favoritas.
+  // Esto permite que componentes como FavoriteButton verifiquen el estado (lleno/vacío)
+  // de forma síncrona sin necesidad de consultar el API en cada render.
 
   static getCachedIds(): Set<string> {
     const ids = CacheService.get<unknown>(FAVORITES_CACHE_KEY);
@@ -59,6 +67,10 @@ export class FavoriteService {
     CacheService.set(FAVORITES_CACHE_KEY, Array.from(ids));
   }
 
+  /**
+   * Sincroniza el caché local con la fuente de verdad (el API).
+   * Usualmente llamado automáticamente tras el login en AuthContext.
+   */
   static async syncCache(): Promise<void> {
     try {
       const { favorites } = await this.listMine();

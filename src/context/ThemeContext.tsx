@@ -1,3 +1,8 @@
+/**
+ * Contexto de Tema (Claro/Oscuro).
+ * Maneja la preferencia visual del usuario y la inyecta en el DOM (clase 'dark').
+ * Soporta persistencia nativa vía localStorage y detecta la preferencia del OS si no hay guardada.
+ */
 import { createContext, useState, useEffect, type ReactNode } from 'react';
 
 type Theme = 'light' | 'dark';
@@ -21,10 +26,13 @@ function getInitialTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-// Usa localStorage directamente en vez de CacheService a proposito: el
-// tema no debe expirar con un TTL como si lo hacen las categorias o los
-// favoritos — es una preferencia que debe persistir indefinidamente
-// hasta que el usuario la cambie.
+/**
+ * Proveedor de Tema.
+ * Usa localStorage directamente en vez de CacheService a propósito: el
+ * tema no debe expirar con un TTL como si lo hacen las categorías o los
+ * favoritos — es una preferencia que debe persistir indefinidamente
+ * hasta que el usuario la cambie.
+ */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 

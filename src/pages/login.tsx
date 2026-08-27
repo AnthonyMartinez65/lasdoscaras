@@ -19,6 +19,11 @@ const EyeSlashIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+/**
+ * Pantalla de Inicio de Sesión.
+ * Autentica al usuario contra el API y, si tiene éxito, guarda su token,
+ * y precarga sus favoritos en el caché local (localStorage).
+ */
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,8 +43,10 @@ export default function Login() {
         body: JSON.stringify({ email, password })
       });
 
+      // Guardar sesión en Contexto y localStorage
       login(response.token, response.user);
 
+      // Precargar favoritos en localStorage para que la UI de los ThemeCards responda inmediatamente
       try {
         const favs = await ApiService.request<string[]>('/api/users/me/favorites');
         CacheService.set('lasdoscaras_favorites', favs);

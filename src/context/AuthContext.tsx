@@ -1,3 +1,8 @@
+/**
+ * Contexto de Autenticación Global (AuthContext).
+ * Maneja el estado de la sesión del usuario a lo largo de toda la aplicación.
+ * Sincroniza la información del usuario y el JWT con el localStorage mediante CacheService.
+ */
 import { createContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../models/auth.types';
 import { CacheService } from '../services/cache.service';
@@ -14,6 +19,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  // Inicialización perezosa (lazy init) para leer del localStorage solo en el primer render
   const [user, setUser] = useState<User | null>(
     () => CacheService.get<{ token: string; user: User }>('lasdoscaras_auth')?.user ?? null
   );
@@ -27,6 +33,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  /**
+   * Registra el inicio de sesión.
+   * Guarda el token y el usuario en el estado y en localStorage, 
+   * y desencadena la sincronización de favoritos.
+   */
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);
@@ -34,6 +45,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     FavoriteService.syncCache();
   };
 
+  /**
+   * Limpia la sesión actual.
+   * Elimina las credenciales y los datos privados del usuario (favoritos/historial)
+   * del localStorage.
+   */
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -42,8 +58,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     CacheService.remove('lasdoscaras_history');
   };
 
-  // Registrar el callback global para que api.service pueda limpiar la
-  // sesion cuando recibe un 401 sin depender de React Context.
+  /**
+   * Callback Global 401:
+   * Permite que la capa de red (api.service) desconecte al usuario automáticamente
+   * si recibe un error 401 (Token Expirado) desde el backend.
+   */
   useEffect(() => {
     setOnUnauthorized(() => {
       logout();

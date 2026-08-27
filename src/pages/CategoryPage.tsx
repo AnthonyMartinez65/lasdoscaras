@@ -96,12 +96,25 @@ export default function CategoryPage() {
           </div>
           
           {/* Filtros requeridos por el PR */}
-          <div className="flex items-center gap-3">
-            {hashtag && (
+          <div className="flex items-center gap-3 flex-wrap">
+            {hashtag ? (
               <div className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2">
                 <span>#{hashtag}</span>
-                <button onClick={() => { searchParams.delete('hashtag'); setSearchParams(searchParams); }} className="hover:text-blue-900 dark:hover:text-white">✕</button>
+                <button onClick={() => { searchParams.delete('hashtag'); setSearchParams(searchParams); }} className="hover:text-blue-900 dark:hover:text-white">×</button>
               </div>
+            ) : (
+              <input
+                type="text"
+                placeholder="Buscar hashtag..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                    searchParams.set('hashtag', e.currentTarget.value.trim().replace(/^#/, ''));
+                    setSearchParams(searchParams);
+                    e.currentTarget.value = '';
+                  }
+                }}
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none w-48"
+              />
             )}
             <select
               value={sort}

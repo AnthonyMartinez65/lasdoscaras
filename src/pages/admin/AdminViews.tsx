@@ -17,6 +17,12 @@ const FILTERS: { label: string; value: ViewStatus | '' }[] = [
   { label: 'Despublicadas', value: 'UNPUBLISHED' },
 ];
 
+/**
+ * Panel de Administración: Moderación de Publicaciones.
+ * Exclusivo para usuarios con rol SUPERADMIN.
+ * Permite ver todas las publicaciones (incluso las despublicadas) y 
+ * alterar su estado (Publicar/Despublicar) por incumplimiento de normas.
+ */
 export default function AdminViews() {
   const { showNotification } = useNotification();
   const [views, setViews] = useState<PoliticalView[]>([]);
@@ -38,9 +44,13 @@ export default function AdminViews() {
       .finally(() => setLoading(false));
   };
 
+  // Sincroniza la paginación y la carga de datos cada vez que cambia el filtro
   useEffect(() => { setPage(1); }, [statusFilter]);
   useEffect(() => { load(); }, [statusFilter, page]);
 
+  /**
+   * Cambia el estado de publicación de un debate (PUBLISHED <-> UNPUBLISHED).
+   */
   const handleTogglePublish = async (view: PoliticalView) => {
     setActingOn(view.id);
     try {
@@ -104,12 +114,17 @@ export default function AdminViews() {
                       <Link to={`/views/${view.id}`} className="font-bold text-slate-800 hover:text-blue-600 truncate block">
                         {side.title} vs {counterpart.title}
                       </Link>
-                      <p className="text-xs text-slate-500">Por {view.author.name} · {view.category?.name}</p>
+                      <p className="text-xs text-slate-500">Por {view.author.name} · {view.category?.name} · {new Date(view.createdAt).toLocaleDateString()}</p>
+                    <span className="inline-flex items-center gap-2 text-xs text-slate-400 mt-1">
+                      <span className="font-bold text-slate-500">A:</span> <span className="text-green-600">👍 {view.sides[0]?.likeCount || 0}</span> <span className="text-red-500">👎 {view.sides[0]?.dislikeCount || 0}</span>
+                      <span className="text-slate-300 mx-1">|</span>
+                      <span className="font-bold text-slate-500">B:</span> <span className="text-green-600">👍 {view.sides[1]?.likeCount || 0}</span> <span className="text-red-500">👎 {view.sides[1]?.dislikeCount || 0}</span>
+                    </span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${view.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'
                         }`}>
-                        {view.status}
+                        {view.status === 'PUBLISHED' ? 'Publicada' : 'Despublicada'}
                       </span>
                       {view.status === 'PUBLISHED' ? (
                         <ConfirmButton
@@ -126,7 +141,7 @@ export default function AdminViews() {
                           disabled={actingOn === view.id}
                           className="text-xs font-bold bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50"
                         >
-                          Publicar
+                          Republicar
                         </button>
                       )}
                     </div>

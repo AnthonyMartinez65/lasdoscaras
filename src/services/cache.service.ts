@@ -1,3 +1,8 @@
+/**
+ * Servicio de Caché Local.
+ * Actúa como un wrapper seguro sobre localStorage. Permite guardar datos
+ * con un tiempo de vida (TTL) opcional, eliminándolos automáticamente si expiran.
+ */
 export class CacheService {
   static set<T>(key: string, data: T, ttlMinutes?: number): void {
     const item = {
@@ -7,6 +12,10 @@ export class CacheService {
     localStorage.setItem(key, JSON.stringify(item));
   }
 
+  /**
+   * Recupera y parsea un dato del localStorage.
+   * Si el dato tenía un TTL y ya expiró, lo elimina y devuelve null.
+   */
   static get<T>(key: string): T | null {
     const itemStr = localStorage.getItem(key);
     if (!itemStr) return null;
