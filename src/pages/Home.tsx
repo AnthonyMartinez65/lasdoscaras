@@ -79,6 +79,7 @@ export default function Home() {
   }, [selectedCategory, sort, hashtag, page]);
 
   const clearHashtag = () => {
+    CacheService.set('lasdoscaras_filters', { category: selectedCategory, sort, hashtag: '' });
     setSearchParams(params => {
       const next = new URLSearchParams(params);
       next.delete('hashtag');
