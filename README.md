@@ -1,8 +1,8 @@
-# 🎭 Las Dos Caras - Frontend
+﻿# 🎭 Las Dos Caras - Frontend
 
 Este es el repositorio Frontend del proyecto "Las Dos Caras", desarrollado con **React**, **TypeScript**, **Vite** y **Tailwind CSS v4**.
 
-## 📋 Información del Proyecto
+## 📌 Información del Proyecto
 * **Integrantes del equipo:** Kendall Gomez Alvarado, Juan Pablo Murillo Aragon y Anthony Rait Martinez Ruiz
 * **Plataforma de entrega:** Campus Virtual UTN
 * **Notas adicionales:** El backend (API REST) no está incluido en este repositorio y debe ejecutarse por separado.
@@ -15,26 +15,41 @@ Para que el proyecto funcione correctamente en tu máquina, es necesario instala
 
 ### 1. Clonar el repositorio
 Descarga el código a tu computadora y entra a la carpeta del proyecto:
-```bash
+``bash
 git clone https://github.com/AnthonyMartinez65/lasdoscaras.git
 cd lasdoscaras
-```
+``
 
-### 2. Instalar las dependencias (`node_modules`)
+### 2. Instalar las dependencias (
+ode_modules)
 Por buenas prácticas, los motores y archivos pesados están excluidos del repositorio. Para descargar React, Tailwind y demás herramientas necesarias, ejecuta:
-```bash
+``bash
 npm install
-```
+``
 
 ### 3. Configurar las variables de entorno
-1. En la raíz del proyecto, busca el archivo de plantilla llamado **`.env.example`**.
-2. Haz una copia exacta de ese archivo en la misma carpeta y renómbralo únicamente como **`.env`**.
-3. Abre el nuevo `.env` y asegúrate de que la variable apunte a tu servidor backend local (ej. `VITE_API_URL=http://localhost:3000`).
+1. En la raíz del proyecto, busca el archivo de plantilla llamado **.env.example**.
+2. Haz una copia exacta de ese archivo en la misma carpeta y renómbralo únicamente como **.env**.
+3. Abre el nuevo .env y asegúrate de que la variable apunte a tu servidor backend local (ej. VITE_API_URL=http://localhost:3000).
 
 ### 4. Iniciar el servidor de desarrollo
-Una vez que las dependencias estén instaladas y el `.env` esté listo, levanta la interfaz con el siguiente comando:
-```bash
+Una vez que las dependencias estén instaladas y el .env esté listo, levanta la interfaz con el siguiente comando:
+``bash
 npm run dev
-```
+``
 
-La terminal te devolverá una dirección local (por defecto `http://localhost:5173/`). Ábrela en tu navegador para ver la aplicación funcionando en vivo.
+La terminal te devolverá una dirección local (por defecto http://localhost:5173/). Ábrela en tu navegador para ver la aplicación funcionando en vivo.
+
+## 📸 Vistas Principales
+
+### 1. Tablero Principal
+![Tablero Principal](docs/tablero.png)
+
+### 2. Detalle de Publicación
+![Detalle de Publicación](docs/detalle.png)
+
+### 3. Crear / Editar Publicación
+![Crear Publicación](docs/crear.png)
+
+### 4. Panel de Administración
+![Panel de Administración](docs/admin.png)
