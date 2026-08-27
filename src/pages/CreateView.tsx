@@ -1,6 +1,8 @@
 import { useState, useEffect, type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import HashtagInput from '../components/HashtagInput';
+import SourceInput, { type SourceData } from '../components/SourceInput';
 import { ViewService } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
 import { useNotification } from '../context/NotificationContext';
@@ -12,7 +14,7 @@ export default function CreateView() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState('');
-  const [hashtags, setHashtags] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
 
   const [sideATitle, setSideATitle] = useState('');
   const [sideADesc, setSideADesc] = useState('');
@@ -20,8 +22,13 @@ export default function CreateView() {
   const [sideBTitle, setSideBTitle] = useState('');
   const [sideBDesc, setSideBDesc] = useState('');
 
+  const [sideASources, setSideASources] = useState<SourceData[]>([]);
+  const [sideBSources, setSideBSources] = useState<SourceData[]>([]);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Rastrear si hay cambios para confirmar antes de cancelar
-  const isDirty = sideATitle || sideADesc || sideBTitle || sideBDesc || hashtags || categoryId;
+  const isDirty = sideATitle || sideADesc || sideBTitle || sideBDesc || sideASources.length > 0 || sideBSources.length > 0 || hashtags.length > 0 || categoryId;
 
   useEffect(() => {
     CategoryService.list().then(setCategories).catch(() => { });
@@ -34,20 +41,33 @@ export default function CreateView() {
       return;
     }
 
+    const validSourcesA = sideASources.filter(s => s.url.trim() !== '');
+    const validSourcesB = sideBSources.filter(s => s.url.trim() !== '');
+
+    if (validSourcesA.length === 0 || validSourcesB.length === 0) {
+      showNotification('Debes añadir al menos una fuente válida (enlace) para cada postura (Lado A y Lado B).', 'warning');
+      return;
+    }
+
+    if (validSourcesA.some(s => !s.label.trim()) || validSourcesB.some(s => !s.label.trim())) {
+      showNotification('Por favor, escribe una Etiqueta para cada una de las fuentes que agregaste.', 'warning');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const payload = {
         categoryId,
-        hashtags: hashtags.split(',').map(t => t.trim()).filter(Boolean),
-        // En lugar de un arreglo 'sides', envía 'side' y 'counterpart' por separado
+        hashtags: hashtags,
         side: {
           title: sideATitle,
           description: sideADesc,
-          sources: []
+          sources: validSourcesA
         },
         counterpart: {
           title: sideBTitle,
           description: sideBDesc,
-          sources: []
+          sources: validSourcesB
         }
       };
 
@@ -56,6 +76,8 @@ export default function CreateView() {
       navigate(`/views/${view.id}`);
     } catch (err: any) {
       showNotification(err.message || 'Error al crear la publicación', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
 
   };
@@ -76,7 +98,10 @@ export default function CreateView() {
       <main className="max-w-4xl mx-auto px-4 mt-8">
         <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-6">Nueva Publicación</h1>
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+        <form 
+          onSubmit={handleSubmit} 
+          className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 border border-slate-200 dark:border-slate-700"
+        >
 
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -94,75 +119,89 @@ export default function CreateView() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hashtags (separados por coma)</label>
-              <input
-                value={hashtags}
-                onChange={e => setHashtags(e.target.value)}
-                placeholder="politica, debate, 2026"
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 bg-white dark:bg-slate-700"
-              />
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hashtags</label>
+              <HashtagInput value={hashtags} onChange={setHashtags} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50">
-              <h2 className="text-lg font-bold text-blue-700 dark:text-blue-300 mb-4">Postura (Lado A)</h2>
+              <span className="inline-block px-3 py-1 bg-blue-600 text-white text-xs font-black rounded-full mb-3 uppercase tracking-wider">
+                Postura A
+              </span>
               <input
+                type="text"
                 value={sideATitle}
                 onChange={e => setSideATitle(e.target.value)}
-                placeholder="Título de la postura"
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 mb-4 bg-white dark:bg-slate-700"
+                placeholder="Título corto de esta postura..."
+                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700"
                 required
+                maxLength={120}
               />
+              <div className="text-right text-xs text-slate-500 mb-4">
+                {sideATitle.length} / 120 max
+              </div>
+
               <textarea
                 value={sideADesc}
                 onChange={e => setSideADesc(e.target.value)}
-                placeholder="Describe la postura (mínimo 100 caracteres)..."
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 h-40 bg-white dark:bg-slate-700"
+                placeholder="Desarrolla los argumentos de esta postura..."
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 bg-white dark:bg-slate-700 min-h-[150px] resize-none"
                 required
-                minLength={100}
+                
               />
               <div className="text-right text-xs text-slate-500 mt-1">
                 {sideADesc.length} / 100 min
               </div>
+              <SourceInput value={sideASources} onChange={setSideASources} />
             </div>
 
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-900/50">
-              <h2 className="text-lg font-bold text-purple-700 dark:text-purple-300 mb-4">Contrapostura (Lado B)</h2>
+              <span className="inline-block px-3 py-1 bg-purple-600 text-white text-xs font-black rounded-full mb-3 uppercase tracking-wider">
+                Contrapostura B
+              </span>
               <input
+                type="text"
                 value={sideBTitle}
                 onChange={e => setSideBTitle(e.target.value)}
-                placeholder="Título de la contrapostura"
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 mb-4 bg-white dark:bg-slate-700"
+                placeholder="Título de la postura contraria..."
+                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700"
                 required
+                maxLength={120}
               />
+              <div className="text-right text-xs text-slate-500 mb-4">
+                {sideBTitle.length} / 120 max
+              </div>
+
               <textarea
                 value={sideBDesc}
                 onChange={e => setSideBDesc(e.target.value)}
-                placeholder="Describe la contrapostura (mínimo 100 caracteres)..."
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 h-40 bg-white dark:bg-slate-700"
+                placeholder="Desarrolla los argumentos de la contrapostura..."
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 bg-white dark:bg-slate-700 min-h-[150px] resize-none"
                 required
-                minLength={100}
+                
               />
               <div className="text-right text-xs text-slate-500 mt-1">
                 {sideBDesc.length} / 100 min
               </div>
+              <SourceInput value={sideBSources} onChange={setSideBSources} />
             </div>
           </div>
 
-          <div className="flex justify-end gap-4 border-t border-slate-100 dark:border-slate-700 pt-4">
+          <div className="flex justify-end gap-3 mt-8">
             <button
               type="button"
               onClick={handleCancel}
-              className="px-6 py-2 rounded-xl text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700"
+              className="px-6 py-2.5 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-6 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="px-6 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:shadow-none"
             >
-              Publicar
+              {isSubmitting ? 'Publicando...' : 'Publicar Debate'}
             </button>
           </div>
         </form>

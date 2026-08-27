@@ -14,7 +14,7 @@ export default function CategoryPage() {
   
   // Extraemos los filtros de la URL (si existen)
   const hashtag = searchParams.get('hashtag') || '';
-  const sort = (searchParams.get('sort') as 'recent' | 'popular') || 'recent';
+  const sort = (searchParams.get('sort') as 'recent' | 'likes' | 'dislikes') || 'recent';
 
   const [category, setCategory] = useState<Category | null>(null);
   const [views, setViews] = useState<PoliticalView[]>([]);
@@ -88,6 +88,11 @@ export default function CategoryPage() {
             <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">
               {views.length} {views.length === 1 ? 'publicación' : 'publicaciones'}
             </p>
+            {category?.description && (
+              <p className="mt-4 text-slate-600 dark:text-slate-400 text-base leading-relaxed max-w-3xl">
+                {category.description}
+              </p>
+            )}
           </div>
           
           {/* Filtros requeridos por el PR */}
@@ -104,7 +109,8 @@ export default function CategoryPage() {
               className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
             >
               <option value="recent">Más recientes</option>
-              <option value="popular">Más populares</option>
+              <option value="likes">Más likes</option>
+              <option value="dislikes">Más dislikes</option>
             </select>
           </div>
         </div>

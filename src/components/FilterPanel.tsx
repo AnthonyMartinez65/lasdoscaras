@@ -9,6 +9,7 @@ interface FilterPanelProps {
   onSortChange: (sort: ViewsSort) => void;
   activeHashtag?: string;
   onClearHashtag?: () => void;
+  onSearchHashtag?: (hashtag: string) => void;
 }
 
 const SORT_OPTIONS: { value: ViewsSort; label: string }[] = [
@@ -25,6 +26,7 @@ export default function FilterPanel({
   onSortChange,
   activeHashtag,
   onClearHashtag,
+  onSearchHashtag,
 }: FilterPanelProps) {
   return (
     <div className="mb-8">
@@ -41,6 +43,24 @@ export default function FilterPanel({
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
+        </div>
+        <div className="flex-1">
+          <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Hashtag</label>
+          <input
+            type="text"
+            placeholder="Buscar hashtag (Enter)"
+            className="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = e.currentTarget.value.trim();
+                if (val && onSearchHashtag) {
+                  onSearchHashtag(val);
+                  e.currentTarget.value = '';
+                }
+              }
+            }}
+          />
         </div>
         <div className="flex-1">
           <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Ordenar por</label>

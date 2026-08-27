@@ -60,10 +60,25 @@ export default function ThemeCard({ view }: { view: PoliticalView }) {
         <p className="text-sm text-slate-600 dark:text-slate-300 mb-4 line-clamp-2">
           {excerpt}
         </p>
+
+        {view.hashtags && view.hashtags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-4">
+            {view.hashtags.map(h => (
+              <span key={h.id} className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+                #{h.name}
+              </span>
+            ))}
+          </div>
+        )}
         
-        <div className="flex justify-between items-center text-xs font-medium text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700 pt-3">
+        <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700 pt-3 mb-2">
+          <span className="text-blue-600 dark:text-blue-400">👍 Lado A: {view.sides[0]?.likeCount || 0}</span>
+          <span className="text-purple-600 dark:text-purple-400">👍 Lado B: {view.sides[1]?.likeCount || 0}</span>
+        </div>
+
+        <div className="flex justify-between items-center text-xs font-medium text-slate-500 dark:text-slate-400">
           <span>{new Date(view.createdAt).toLocaleDateString()}</span>
-          <span>Por {view.author.name}</span>
+          <span>Por <Link to={`/authors/${view.author.id}`} className="text-blue-600 dark:text-blue-400 hover:underline">{view.author.name}</Link></span>
         </div>
       </div>
     </Link>

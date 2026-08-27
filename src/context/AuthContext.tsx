@@ -21,6 +21,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     () => CacheService.get<{ token: string; user: User }>('lasdoscaras_auth')?.token ?? null
   );
 
+  useEffect(() => {
+    if (token) {
+      FavoriteService.syncCache();
+    }
+  }, []);
+
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);

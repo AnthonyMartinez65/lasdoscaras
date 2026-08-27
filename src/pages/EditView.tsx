@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext, type SubmitEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import HashtagInput from '../components/HashtagInput';
+import SourceInput, { type SourceData } from '../components/SourceInput';
 import { ViewService } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
 import { useNotification } from '../context/NotificationContext';
@@ -15,7 +17,7 @@ export default function EditView() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState('');
-  const [hashtags, setHashtags] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
 
   const [sideATitle, setSideATitle] = useState('');
   const [sideADesc, setSideADesc] = useState('');
@@ -23,7 +25,11 @@ export default function EditView() {
   const [sideBTitle, setSideBTitle] = useState('');
   const [sideBDesc, setSideBDesc] = useState('');
 
+  const [sideASources, setSideASources] = useState<SourceData[]>([]);
+  const [sideBSources, setSideBSources] = useState<SourceData[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialData, setInitialData] = useState<any>(null);
 
   useEffect(() => {
@@ -41,7 +47,7 @@ export default function EditView() {
 
         setCategories(cats);
         setCategoryId(view.categoryId || '');
-        setHashtags(view.hashtags.map(h => h.name).join(', '));
+        setHashtags(view.hashtags.map(h => h.name));
 
         const sideA = view.sides.find(s => s.type === 'SIDE');
         const sideB = view.sides.find(s => s.type === 'COUNTERPART');
@@ -49,19 +55,23 @@ export default function EditView() {
         if (sideA) {
           setSideATitle(sideA.title);
           setSideADesc(sideA.description);
+          if (sideA.sources) setSideASources(sideA.sources.map(s => ({ type: s.type, url: s.url, label: s.label || '' })));
         }
         if (sideB) {
           setSideBTitle(sideB.title);
           setSideBDesc(sideB.description);
+          if (sideB.sources) setSideBSources(sideB.sources.map(s => ({ type: s.type, url: s.url, label: s.label || '' })));
         }
 
         setInitialData({
           categoryId: view.categoryId || '',
-          hashtags: view.hashtags.map(h => h.name).join(', '),
+          hashtags: JSON.stringify(view.hashtags.map(h => h.name)),
           sideATitle: sideA?.title || '',
           sideADesc: sideA?.description || '',
           sideBTitle: sideB?.title || '',
-          sideBDesc: sideB?.description || ''
+          sideBDesc: sideB?.description || '',
+          sideASources: JSON.stringify(sideA?.sources?.map(s => ({ type: s.type, url: s.url, label: s.label || '' })) || []),
+          sideBSources: JSON.stringify(sideB?.sources?.map(s => ({ type: s.type, url: s.url, label: s.label || '' })) || [])
         });
 
       })
@@ -76,11 +86,13 @@ export default function EditView() {
     if (!initialData) return false;
     return (
       categoryId !== initialData.categoryId ||
-      hashtags !== initialData.hashtags ||
+      JSON.stringify(hashtags) !== initialData.hashtags ||
       sideATitle !== initialData.sideATitle ||
       sideADesc !== initialData.sideADesc ||
       sideBTitle !== initialData.sideBTitle ||
-      sideBDesc !== initialData.sideBDesc
+      sideBDesc !== initialData.sideBDesc ||
+      JSON.stringify(sideASources) !== initialData.sideASources ||
+      JSON.stringify(sideBSources) !== initialData.sideBSources
     );
   };
 
@@ -93,27 +105,53 @@ export default function EditView() {
       return;
     }
 
+    const validSourcesA = sideASources.filter(s => s.url.trim() !== '');
+    const validSourcesB = sideBSources.filter(s => s.url.trim() !== '');
+
+    if (validSourcesA.length === 0 || validSourcesB.length === 0) {
+      showNotification('Debes añadir al menos una fuente válida (enlace) para cada postura (Lado A y Lado B).', 'warning');
+      return;
+    }
+
+    if (validSourcesA.some(s => !s.label.trim()) || validSourcesB.some(s => !s.label.trim())) {
+      showNotification('Por favor, escribe una Etiqueta para cada una de las fuentes que agregaste.', 'warning');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const payload = {
         categoryId,
-        hashtags: hashtags.split(',').map(t => t.trim()).filter(Boolean),
+        hashtags: hashtags,
         side: {
           title: sideATitle,
           description: sideADesc,
-          sources: []
+          sources: validSourcesA
         },
         counterpart: {
           title: sideBTitle,
           description: sideBDesc,
-          sources: []
+          sources: validSourcesB
         }
       };
 
       const { view } = await ViewService.update(id, payload);
-      showNotification('Publicación actualizada', 'success');
-      navigate(`/views/${view.id}`);
+      showNotification('¡Publicación actualizada!', 'success');
+      setInitialData({
+        categoryId: view.categoryId || '',
+        hashtags: JSON.stringify(view.hashtags.map(h => h.name)),
+        sideATitle: sideATitle,
+        sideADesc: sideADesc,
+        sideBTitle: sideBTitle,
+        sideBDesc: sideBDesc,
+        sideASources: JSON.stringify(sideASources),
+        sideBSources: JSON.stringify(sideBSources)
+      });
+      navigate(`/views/${id}`);
     } catch (err: any) {
       showNotification(err.message || 'Error al actualizar', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -137,7 +175,10 @@ export default function EditView() {
       <main className="max-w-4xl mx-auto px-4 mt-8">
         <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-6">Editar Publicación</h1>
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+        <form 
+          onSubmit={handleSubmit} 
+          className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 border border-slate-200 dark:border-slate-700"
+        >
 
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -155,68 +196,89 @@ export default function EditView() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hashtags (separados por coma)</label>
-              <input
-                value={hashtags}
-                onChange={e => setHashtags(e.target.value)}
-                placeholder="politica, debate, 2026"
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 bg-white dark:bg-slate-700"
-              />
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Hashtags</label>
+              <HashtagInput value={hashtags} onChange={setHashtags} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50">
-              <h2 className="text-lg font-bold text-blue-700 dark:text-blue-300 mb-4">Postura (Lado A)</h2>
+              <span className="inline-block px-3 py-1 bg-blue-600 text-white text-xs font-black rounded-full mb-3 uppercase tracking-wider">
+                Postura A
+              </span>
               <input
+                type="text"
                 value={sideATitle}
                 onChange={e => setSideATitle(e.target.value)}
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 mb-4 bg-white dark:bg-slate-700"
+                placeholder="Título corto de esta postura..."
+                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700"
                 required
+                maxLength={120}
               />
+              <div className="text-right text-xs text-slate-500 mb-4">
+                {sideATitle.length} / 120 max
+              </div>
               <textarea
                 value={sideADesc}
                 onChange={e => setSideADesc(e.target.value)}
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 h-40 bg-white dark:bg-slate-700"
+                placeholder="Desarrolla los argumentos de esta postura..."
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 bg-white dark:bg-slate-700 min-h-[150px] resize-none"
                 required
-                minLength={100}
+                
               />
+              <div className="mt-4">
+                <label className="block text-sm font-bold text-blue-700 dark:text-blue-300 mb-2">Fuentes y Enlaces</label>
+                <SourceInput value={sideASources} onChange={setSideASources} />
+              </div>
             </div>
 
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-900/50">
-              <h2 className="text-lg font-bold text-purple-700 dark:text-purple-300 mb-4">Contrapostura (Lado B)</h2>
+              <span className="inline-block px-3 py-1 bg-purple-600 text-white text-xs font-black rounded-full mb-3 uppercase tracking-wider">
+                Contrapostura B
+              </span>
               <input
+                type="text"
                 value={sideBTitle}
                 onChange={e => setSideBTitle(e.target.value)}
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 mb-4 bg-white dark:bg-slate-700"
+                placeholder="Título de la postura contraria..."
+                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700"
                 required
+                maxLength={120}
               />
+              <div className="text-right text-xs text-slate-500 mb-4">
+                {sideBTitle.length} / 120 max
+              </div>
               <textarea
                 value={sideBDesc}
                 onChange={e => setSideBDesc(e.target.value)}
-                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 h-40 bg-white dark:bg-slate-700"
+                placeholder="Desarrolla los argumentos de la contrapostura..."
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 bg-white dark:bg-slate-700 min-h-[150px] resize-none"
                 required
-                minLength={100}
+                
               />
+              <div className="mt-4">
+                <label className="block text-sm font-bold text-purple-700 dark:text-purple-300 mb-2">Fuentes y Enlaces</label>
+                <SourceInput value={sideBSources} onChange={setSideBSources} />
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-4 border-t border-slate-100 dark:border-slate-700 pt-4">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-6 py-2 rounded-xl text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={!hasChanges()}
-              className="px-6 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50"
-            >
-              Guardar Cambios
-            </button>
-          </div>
+            <div className="flex justify-end gap-3 mt-8">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-6 py-2.5 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={!hasChanges() || isSubmitting}
+                className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-lg shadow-blue-500/30 disabled:shadow-none"
+              >
+                {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </div>
         </form>
       </main>
     </div>

@@ -2,11 +2,40 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../services/api.service';
 
+const EyeIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+  </svg>
+);
+
+const EyeSlashIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+  </svg>
+);
+
 export default function Register() {
   const [formData, setFormData] = useState({ nombre: '', email: '', password: '', confirm: '' });
   const [errors, setErrors] = useState<any>({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
+
+  const calculateStrength = (pass: string) => {
+    let score = 0;
+    if (!pass) return 0;
+    if (pass.length >= 8) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+    return Math.min(score, 4);
+  };
+
+  const strengthScore = calculateStrength(formData.password);
+  const strengthColors = ['bg-slate-200', 'bg-red-500', 'bg-orange-500', 'bg-blue-500', 'bg-green-500'];
+  const strengthLabels = ['', 'Débil', 'Regular', 'Buena', 'Fuerte'];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -14,8 +43,21 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validaciones Frontend
+    let newErrors: any = {};
+    if (formData.nombre.trim().length < 3) {
+      newErrors.nombre = 'El nombre debe tener al menos 3 caracteres';
+    }
+    if (formData.password.length < 8) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
+    }
     if (formData.password !== formData.confirm) {
-      setErrors({ confirm: 'Las contraseñas no coinciden' });
+      newErrors.confirm = 'Las contraseñas no coinciden';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -82,12 +124,56 @@ export default function Register() {
           </div>
           <div>
             <label className="block text-slate-700 text-sm font-bold mb-2">Contraseña</label>
-            <input type="password" name="password" onChange={handleChange} required className="w-full border border-slate-300 bg-slate-50 text-slate-900 rounded-xl p-3 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" placeholder="••••••••" />
+            <div className="relative">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                name="password" 
+                onChange={handleChange} 
+                required 
+                className="w-full border border-slate-300 bg-slate-50 text-slate-900 rounded-xl p-3 pr-10 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" 
+                placeholder="••••••••" 
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+              >
+                {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+              </button>
+            </div>
+            {formData.password && (
+              <div className="mt-2">
+                <div className="flex gap-1 h-1.5 mb-1">
+                  {[1, 2, 3, 4].map(level => (
+                    <div key={level} className={`flex-1 rounded-full transition-colors duration-300 ${strengthScore >= level ? strengthColors[strengthScore] : 'bg-slate-200'}`}></div>
+                  ))}
+                </div>
+                <p className={`text-xs font-bold text-right ${strengthScore > 0 ? strengthColors[strengthScore].replace('bg-', 'text-') : ''}`}>
+                  {strengthLabels[strengthScore]}
+                </p>
+              </div>
+            )}
             {errors.password && <p className="text-red-500 text-xs font-medium mt-1.5">{errors.password}</p>}
           </div>
           <div>
             <label className="block text-slate-700 text-sm font-bold mb-2">Confirmar Contraseña</label>
-            <input type="password" name="confirm" onChange={handleChange} required className="w-full border border-slate-300 bg-slate-50 text-slate-900 rounded-xl p-3 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" placeholder="••••••••" />
+            <div className="relative">
+              <input 
+                type={showConfirm ? "text" : "password"} 
+                name="confirm" 
+                onChange={handleChange} 
+                required 
+                className="w-full border border-slate-300 bg-slate-50 text-slate-900 rounded-xl p-3 pr-10 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" 
+                placeholder="••••••••" 
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+              >
+                {showConfirm ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+              </button>
+            </div>
             {errors.confirm && <p className="text-red-500 text-xs font-medium mt-1.5">{errors.confirm}</p>}
           </div>
           <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl mt-6 transition-all duration-300 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none">

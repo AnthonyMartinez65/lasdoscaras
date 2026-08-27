@@ -94,7 +94,7 @@ export default function AdminViews() {
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
               {views.map(view => {
                 const side = getSide(view);
                 const counterpart = getCounterpart(view);
