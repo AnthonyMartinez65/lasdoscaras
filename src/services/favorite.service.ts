@@ -1,45 +1,69 @@
 import { ApiService } from './api.service';
 import { CacheService } from './cache.service';
-// Corregido: Usamos PoliticalView en lugar del ViewResponse que pedía el doc
+import { ViewService } from './view.service';
 import type { PoliticalView } from '../models/view.types';
 
 const FAVORITES_CACHE_KEY = 'lasdoscaras_favorites';
 
 export class FavoriteService {
-  static async toggleFavorite(viewId: string): Promise<{ isFavorite: boolean }> {
-    const res = await ApiService.request<{ isFavorite: boolean }>(`/api/favorites/${viewId}`, {
-      method: 'POST',
-    });
-    
-    // Actualizar caché al cambiar
-    const cached = this.getFavoritesCache();
-    if (res.isFavorite) {
-      if (!cached.includes(viewId)) CacheService.set(FAVORITES_CACHE_KEY, [...cached, viewId]);
-    } else {
-      CacheService.set(FAVORITES_CACHE_KEY, cached.filter(id => id !== viewId));
-    }
-    
-    return res;
+  static async add(viewId: string): Promise<void> {
+    await ApiService.request(`/api/views/${viewId}/favorite`, { method: 'POST' });
+    this.addToCache(viewId);
   }
 
-  // Corregido: Reemplazado ViewResponse por PoliticalView
-  static async getFavorites(): Promise<PoliticalView[]> {
-    const res = await ApiService.request<PoliticalView[]>('/api/favorites');
-    const ids = res.map(v => v.id);
-    CacheService.set(FAVORITES_CACHE_KEY, ids);
-    return res;
+  static async remove(viewId: string): Promise<void> {
+    await ApiService.request(`/api/views/${viewId}/favorite`, { method: 'DELETE' });
+    this.removeFromCache(viewId);
   }
 
-  static getFavoritesCache(): string[] {
-    return CacheService.get<string[]>(FAVORITES_CACHE_KEY) || [];
+  static async listMine(): Promise<{ favorites: string[] }> {
+    return ApiService.request<{ favorites: string[] }>('/api/users/me/favorites');
+  }
+
+  // Trae la publicación completa de cada id favorito, en paralelo, para
+  // poder mostrarlas como cards en la pestaña "Favoritos" del perfil.
+  static async getMyFavoriteViews(): Promise<PoliticalView[]> {
+    const { favorites } = await this.listMine();
+    const results = await Promise.all(
+      favorites.map(id => ViewService.getById(id).then(res => res.view).catch(() => null))
+    );
+    return results.filter((v): v is PoliticalView => v !== null);
+  }
+
+  // --- Caché local (lasdoscaras_favorites) ---
+  // Guarda solo los ids favoritos del usuario actual. Cada FavoriteButton
+  // lo consulta directamente para saber si mostrarse lleno o vacío, sin
+  // pedirle nada al API en cada render.
+
+  static getCachedIds(): Set<string> {
+    const ids = CacheService.get<unknown>(FAVORITES_CACHE_KEY);
+    
+    const safeIds = Array.isArray(ids) ? ids : [];
+    
+    return new Set(safeIds as string[]);
+  }
+
+  static isCached(viewId: string): boolean {
+    return this.getCachedIds().has(viewId);
+  }
+
+  static addToCache(viewId: string): void {
+    const ids = this.getCachedIds();
+    ids.add(viewId);
+    CacheService.set(FAVORITES_CACHE_KEY, Array.from(ids));
+  }
+
+  static removeFromCache(viewId: string): void {
+    const ids = this.getCachedIds();
+    ids.delete(viewId);
+    CacheService.set(FAVORITES_CACHE_KEY, Array.from(ids));
   }
 
   static async syncCache(): Promise<void> {
     try {
-      // Corregido: Quitamos el 'const res =' para que no dé advertencia
-      await this.getFavorites();
+      const { favorites } = await this.listMine();
+      CacheService.set(FAVORITES_CACHE_KEY, favorites);
     } catch {
-      // Ignorar error si no hay conexión, se usará lo que esté en caché
     }
   }
 }

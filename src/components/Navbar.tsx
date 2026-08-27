@@ -13,8 +13,8 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    // AQUÍ ESTÁ LA CORRECCIÓN: Redirige a /login
-    navigate('/login'); 
+    // Redirige al tablero (inicio) después de cerrar sesión
+    navigate('/'); 
   };
 
   const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
