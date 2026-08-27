@@ -1,3 +1,8 @@
+/**
+ * Contexto de Notificaciones Centralizado (Toasts flotantes).
+ * Provee un método global `showNotification` que puede ser llamado
+ * desde cualquier componente para dar feedback visual al usuario.
+ */
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
 type NotificationType = 'success' | 'error' | 'warning' | 'info';
@@ -17,9 +22,9 @@ export const NotificationContext = createContext<NotificationContextType>({
   showNotification: () => {},
 });
 
-// Duraciones diferenciadas segun el enunciado:
-// errores/warnings: 4s (el usuario necesita leerlos)
-// exito/info: 2.5s
+// Duraciones diferenciadas según el requerimiento de resiliencia:
+// - errores/warnings: 4s (el usuario necesita leerlos detenidamente)
+// - éxito/info: 2.5s (feedback rápido)
 const DURATIONS: Record<NotificationType, number> = {
   error: 4000,
   warning: 4000,

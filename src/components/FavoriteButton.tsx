@@ -2,6 +2,12 @@ import { useState, type MouseEvent } from 'react';
 import { FavoriteService } from '../services/favorite.service';
 import { CacheService } from '../services/cache.service';
 
+/**
+ * Botón de Favoritos (Corazón).
+ * Muestra el estado del favorito leyendo directamente del caché local de forma síncrona,
+ * e invoca a FavoriteService para sincronizar los cambios con el API.
+ * Solo es visible para usuarios autenticados.
+ */
 interface FavoriteButtonProps {
   viewId: string;
 }
@@ -25,7 +31,7 @@ export default function FavoriteButton({ viewId }: FavoriteButtonProps) {
     if (loading) return;
     setLoading(true);
     const next = !favorited;
-    setFavorited(next); // optimista
+    setFavorited(next); // Actualización optimista de la UI para respuesta instantánea
 
     try {
       if (next) {

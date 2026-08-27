@@ -1,3 +1,8 @@
+/**
+ * Servicio Central de Publicaciones (Views).
+ * Maneja las operaciones CRUD principales para los debates y el
+ * parseo de los parámetros de filtrado y búsqueda.
+ */
 import { ApiService } from './api.service';
 import type { PoliticalView, ViewsListResponse, CreateViewPayload } from '../models/view.types';
 

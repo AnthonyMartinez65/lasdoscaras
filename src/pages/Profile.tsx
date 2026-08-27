@@ -13,6 +13,13 @@ import type { AuthorProfile } from '../models/author.types';
 import type { PoliticalView } from '../models/view.types';
 import type { HistoryEntry } from '../models/history.types';
 
+/**
+ * Perfil de Usuario (Privado).
+ * Muestra las publicaciones creadas por el usuario autenticado,
+ * su lista de Favoritos (sincronizada con caché y API), y
+ * su Historial local (FIFO) persistido en localStorage.
+ */
+
 function ViewList({
   views,
   emptyMessage,
@@ -112,7 +119,7 @@ export default function Profile() {
       AuthorService.getById(user.id).then(res => setProfile(res.author)),
       ViewService.list({ authorId: user.id, limit: 50 }).then(res => setMyViews(res.views)),
       FavoriteService.getMyFavoriteViews().then(setFavorites).catch(() => {
-        // Si fallan los favoritos, no bloqueamos el resto del perfil.
+        // Fallback: Si fallan los favoritos, la pestaña quedará vacía pero no bloquea el resto del perfil.
       }),
     ])
       .catch(() => setError('No fue posible cargar tu perfil. Intenta de nuevo.'))

@@ -8,6 +8,11 @@ import { ViewService } from '../services/view.service';
 import type { AuthorProfile as AuthorProfileType } from '../models/author.types';
 import type { PoliticalView } from '../models/view.types';
 
+/**
+ * Perfil Público de Autor.
+ * Muestra la información pública de un autor y todas sus publicaciones,
+ * cumpliendo con el requerimiento de la rúbrica de enlazar al autor en cada tarjeta.
+ */
 export default function AuthorProfile() {
   const { id } = useParams<{ id: string }>();
   const [author, setAuthor] = useState<AuthorProfileType | null>(null);

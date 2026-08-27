@@ -1,5 +1,10 @@
+/**
+ * Vista de Detalle de Publicación.
+ * Muestra el contenido completo de un debate, incluyendo Lado A, Lado B,
+ * las fuentes embebidas (ej. YouTube), estadísticas y el hilo de comentarios.
+ */
 import { useEffect, useState, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import NotFound from './NotFound';
 import SourceBadge from '../components/SourceBadge';
@@ -10,6 +15,8 @@ import { CommentService } from '../services/comment.service';
 import { CacheService } from '../services/cache.service';
 import { HistoryService } from '../services/history.service';
 import { ReactionService } from '../services/reaction.service';
+import { AdminViewService } from '../services/adminView.service';
+import { useNotification } from '../context/NotificationContext';
 import { AuthContext } from '../context/AuthContext';
 import { getSide, getCounterpart } from '../models/view.types';
 import type { PoliticalView, ViewSide, Source } from '../models/view.types';
@@ -27,6 +34,10 @@ const getYoutubeId = (url: string) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
+/**
+ * Componente interno para renderizar cada lado del debate (A o B).
+ * Muestra el título, descripción, fuentes y botones de reacción (Me Gusta / No Me Gusta).
+ */
 function SideBlock({ data, label, colorClass, onReact }: { data: ViewSide; label: string; colorClass: string; onReact: (type: 'like' | 'dislike') => void }) {
   return (
     <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm min-w-0">
@@ -60,10 +71,10 @@ function SideBlock({ data, label, colorClass, onReact }: { data: ViewSide; label
         );
       })}
       <div className="flex items-center gap-4 text-sm font-bold text-slate-500 border-t border-slate-100 pt-4">
-        <button onClick={() => onReact('like')} className="flex items-center gap-1 hover:text-blue-600 transition-colors" title="Dar Me Gusta">
+        <button onClick={() => onReact('like')} className={`flex items-center gap-1 transition-colors ${data.myReaction === 'LIKE' ? 'text-green-600 scale-110' : 'hover:text-green-600'}`} title="Dar Me Gusta">
           👍 {data.likeCount}
         </button>
-        <button onClick={() => onReact('dislike')} className="flex items-center gap-1 hover:text-red-600 transition-colors" title="Dar No Me Gusta">
+        <button onClick={() => onReact('dislike')} className={`flex items-center gap-1 transition-colors ${data.myReaction === 'DISLIKE' ? 'text-red-600 scale-110' : 'hover:text-red-600'}`} title="Dar No Me Gusta">
           👎 {data.dislikeCount}
         </button>
       </div>
@@ -80,7 +91,11 @@ export default function ViewDetail() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showNotification } = useNotification();
+  const navigate = useNavigate();
 
+  // Efecto principal para cargar los detalles del debate, registrar en el historial
+  // y cargar los hilos de comentarios asíncronamente.
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -110,7 +125,7 @@ export default function ViewDetail() {
     CommentService.listThreads(id)
       .then(res => setThreads(res.threads))
       .catch(() => {
-        // Si fallan los hilos, no bloqueamos el detalle completo — solo esa sección queda vacía.
+        // Fallback silencioso: si fallan los hilos, no bloqueamos el detalle completo.
       });
   }, [id]);
 
@@ -160,6 +175,10 @@ export default function ViewDetail() {
   const counterpart = getCounterpart(view);
   const canEdit = user && (user.id === view.author.id || user.role === 'SUPERADMIN');
 
+  /**
+   * Registra una reacción del usuario hacia un lado específico del debate.
+   * Refresca la vista completa para actualizar los contadores desde el servidor.
+   */
   const handleReact = async (sideLetter: 'a' | 'b', type: 'like' | 'dislike') => {
     if (!user) {
       alert('Debes iniciar sesión para votar.');
@@ -175,6 +194,10 @@ export default function ViewDetail() {
     }
   };
 
+  /**
+   * Maneja el botón de compartir utilizando la Web Share API si está disponible,
+   * o copiando el enlace al portapapeles como fallback.
+   */
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!view) return;
@@ -190,7 +213,18 @@ export default function ViewDetail() {
       }
     } else {
       navigator.clipboard.writeText(url);
-      alert('¡Enlace copiado al portapapeles!');
+      showNotification('¡Enlace copiado al portapapeles!', 'success');
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (!confirm('¿Estás seguro de que deseas despublicar esta vista?')) return;
+    try {
+      await AdminViewService.unpublish(view!.id);
+      showNotification('Publicación despublicada con éxito', 'success');
+      navigate('/');
+    } catch (err: any) {
+      showNotification(err.message || 'Error al despublicar', 'error');
     }
   };
 
@@ -198,9 +232,9 @@ export default function ViewDetail() {
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <Link to="/" className="text-sm font-bold text-blue-600 hover:underline mb-6 inline-block">
-          ← Volver al tablero
-        </Link>
+        <button onClick={() => navigate(-1)} className="text-sm font-bold text-blue-600 hover:underline mb-6 inline-block">
+          ← Volver
+        </button>
 
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
@@ -230,8 +264,16 @@ export default function ViewDetail() {
                 Editar
               </Link>
             )}
+            {user?.role === 'SUPERADMIN' && (
+              <button
+                onClick={handleUnpublish}
+                className="text-sm font-bold text-red-600 hover:underline mt-1 ml-3 inline-block"
+              >
+                Despublicar (Admin)
+              </button>
+            )}
 
-            {view.hashtags.length > 0 && (
+            {view.hashtags && view.hashtags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {view.hashtags.map(tag => (
                   <Link

@@ -1,4 +1,6 @@
-import { useState, KeyboardEvent } from 'react';
+import { useState, useEffect, type KeyboardEvent } from 'react';
+import { HashtagService } from '../services/hashtag.service';
+import type { Hashtag } from '../models/category.types';
 
 interface HashtagInputProps {
   value: string[];
@@ -7,6 +9,11 @@ interface HashtagInputProps {
 
 export default function HashtagInput({ value, onChange }: HashtagInputProps) {
   const [inputValue, setInputValue] = useState('');
+  const [availableTags, setAvailableTags] = useState<Hashtag[]>([]);
+
+  useEffect(() => {
+    HashtagService.listAll().then(setAvailableTags).catch(() => {});
+  }, []);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -33,12 +40,18 @@ export default function HashtagInput({ value, onChange }: HashtagInputProps) {
       ))}
       <input
         type="text"
+        list="hashtag-suggestions"
         value={inputValue}
         onChange={e => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={value.length === 0 ? "Escribe y presiona Enter..." : ""}
         className="flex-1 min-w-[140px] bg-transparent outline-none text-slate-700 dark:text-slate-200 text-sm p-1"
       />
+      <datalist id="hashtag-suggestions">
+        {availableTags.map(tag => (
+          <option key={tag.id} value={tag.name} />
+        ))}
+      </datalist>
     </div>
   );
 }

@@ -6,23 +6,37 @@ import FilterPanel from '../components/FilterPanel';
 import Pagination from '../components/Pagination';
 import { ViewService, type ViewsSort } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
+import { CacheService } from '../services/cache.service';
 import type { PoliticalView } from '../models/view.types';
 import type { Category } from '../models/category.types';
 
 const PAGE_SIZE = 20;
 
+/**
+ * Página principal (Tablero).
+ * Muestra la lista paginada de publicaciones (debates) y permite filtrar
+ * por categoría, ordenamiento y hashtags.
+ */
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const hashtag = searchParams.get('hashtag') ?? '';
+  
+  // Leemos filtros cacheados para mantener el estado si el usuario entra a un detalle y regresa
+  const cachedFilters = CacheService.get<{ category: string; sort: ViewsSort; hashtag: string }>('lasdoscaras_filters');
+  const hashtag = searchParams.get('hashtag') ?? cachedFilters?.hashtag ?? '';
 
   const [views, setViews] = useState<PoliticalView[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [sort, setSort] = useState<ViewsSort>('recent');
+  const [selectedCategory, setSelectedCategory] = useState(cachedFilters?.category ?? '');
+  const [sort, setSort] = useState<ViewsSort>(cachedFilters?.sort ?? 'recent');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Guardamos en caché local cada vez que cambian los filtros
+  useEffect(() => {
+    CacheService.set('lasdoscaras_filters', { category: selectedCategory, sort, hashtag });
+  }, [selectedCategory, sort, hashtag]);
 
   useEffect(() => {
     CategoryService.list()
@@ -30,10 +44,12 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
+  // Reseteamos a la página 1 cada vez que cambian los filtros
   useEffect(() => {
     setPage(1);
   }, [selectedCategory, sort, hashtag]);
 
+  // Carga principal de datos y manejo de petición asíncrona segura
   useEffect(() => {
     let cancelled = false;
     setLoading(true);

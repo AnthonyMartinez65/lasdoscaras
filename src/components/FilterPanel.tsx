@@ -1,6 +1,11 @@
 import type { Category } from '../models/category.types';
 import type { ViewsSort } from '../services/view.service';
 
+/**
+ * Panel de Filtros (FilterPanel).
+ * Componente interactivo para buscar y ordenar publicaciones en la página principal.
+ * Envía las selecciones (categoría, orden y hashtag) de vuelta al componente padre (Home).
+ */
 interface FilterPanelProps {
   categories: Category[];
   selectedCategory: string;
@@ -53,7 +58,7 @@ export default function FilterPanel({
             onKeyDown={e => {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                const val = e.currentTarget.value.trim();
+                const val = e.currentTarget.value.trim().replace(/^#/, '');
                 if (val && onSearchHashtag) {
                   onSearchHashtag(val);
                   e.currentTarget.value = '';

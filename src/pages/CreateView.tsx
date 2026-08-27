@@ -5,9 +5,26 @@ import HashtagInput from '../components/HashtagInput';
 import SourceInput, { type SourceData } from '../components/SourceInput';
 import { ViewService } from '../services/view.service';
 import { CategoryService } from '../services/category.service';
+import { CacheService } from '../services/cache.service';
 import { useNotification } from '../context/NotificationContext';
 import type { Category } from '../models/category.types';
 
+interface Draft {
+  categoryId: string;
+  hashtags: string[];
+  sideATitle: string;
+  sideADesc: string;
+  sideBTitle: string;
+  sideBDesc: string;
+  sideASources: SourceData[];
+  sideBSources: SourceData[];
+}
+
+/**
+ * Página de Creación de Publicación.
+ * Permite a los usuarios autenticados crear un nuevo debate.
+ * Incluye funcionalidad de autoguardado de borradores en caché (localStorage).
+ */
 export default function CreateView() {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
@@ -27,12 +44,34 @@ export default function CreateView() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Rastrear si hay cambios para confirmar antes de cancelar
+  // Bandera que rastrea si el usuario ha realizado algún cambio (para prevenir salidas accidentales)
   const isDirty = sideATitle || sideADesc || sideBTitle || sideBDesc || sideASources.length > 0 || sideBSources.length > 0 || hashtags.length > 0 || categoryId;
 
   useEffect(() => {
     CategoryService.list().then(setCategories).catch(() => { });
+    
+    const draft = CacheService.get<Draft>('lasdoscaras_draft');
+    if (draft && window.confirm('Tienes un borrador guardado. ¿Deseas restaurarlo?')) {
+      setCategoryId(draft.categoryId || '');
+      setHashtags(draft.hashtags || []);
+      setSideATitle(draft.sideATitle || '');
+      setSideADesc(draft.sideADesc || '');
+      setSideBTitle(draft.sideBTitle || '');
+      setSideBDesc(draft.sideBDesc || '');
+      setSideASources(draft.sideASources || []);
+      setSideBSources(draft.sideBSources || []);
+    } else if (draft) {
+      CacheService.remove('lasdoscaras_draft');
+    }
   }, []);
+
+  useEffect(() => {
+    if (isDirty) {
+      CacheService.set('lasdoscaras_draft', {
+        categoryId, hashtags, sideATitle, sideADesc, sideBTitle, sideBDesc, sideASources, sideBSources
+      });
+    }
+  }, [categoryId, hashtags, sideATitle, sideADesc, sideBTitle, sideBDesc, sideASources, sideBSources, isDirty]);
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -72,7 +111,8 @@ export default function CreateView() {
       };
 
       const { view } = await ViewService.create(payload);
-      showNotification('¡Publicación creada exitosamente!', 'success');
+      showNotification('Publicación creada con éxito', 'success');
+      CacheService.remove('lasdoscaras_draft');
       navigate(`/views/${view.id}`);
     } catch (err: any) {
       showNotification(err.message || 'Error al crear la publicación', 'error');
@@ -129,12 +169,12 @@ export default function CreateView() {
               <span className="inline-block px-3 py-1 bg-blue-600 text-white text-xs font-black rounded-full mb-3 uppercase tracking-wider">
                 Postura A
               </span>
-              <input
-                type="text"
+              <textarea
+                rows={2}
                 value={sideATitle}
                 onChange={e => setSideATitle(e.target.value)}
                 placeholder="Título corto de esta postura..."
-                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700"
+                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700 resize-none"
                 required
                 maxLength={120}
               />
@@ -160,12 +200,12 @@ export default function CreateView() {
               <span className="inline-block px-3 py-1 bg-purple-600 text-white text-xs font-black rounded-full mb-3 uppercase tracking-wider">
                 Contrapostura B
               </span>
-              <input
-                type="text"
+              <textarea
+                rows={2}
                 value={sideBTitle}
                 onChange={e => setSideBTitle(e.target.value)}
                 placeholder="Título de la postura contraria..."
-                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700"
+                className="w-full text-xl font-bold border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 mb-2 bg-white dark:bg-slate-700 resize-none"
                 required
                 maxLength={120}
               />
