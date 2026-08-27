@@ -3,6 +3,7 @@ import Navbar from '../../components/Navbar';
 import AdminNav from '../../components/AdminNav';
 import ConfirmButton from '../../components/ConfirmButton';
 import { AdminCategoryService } from '../../services/admin-category.service';
+import { ViewService } from '../../services/view.service';
 import { useNotification } from '../../context/NotificationContext';
 import type { Category } from '../../models/category.types';
 
@@ -14,6 +15,7 @@ export default function AdminCategories() {
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
 
   const load = () => {
     setLoading(true);
@@ -23,7 +25,28 @@ export default function AdminCategories() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (categories.length === 0) return;
+    const fetchCounts = async () => {
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        categories.map(async (cat) => {
+          try {
+            const res = await ViewService.list({ category: cat.id, limit: 1 });
+            counts[cat.id] = res.total;
+          } catch (e) {
+            counts[cat.id] = 0;
+          }
+        })
+      );
+      setCategoryCounts(counts);
+    };
+    fetchCounts();
+  }, [categories]);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -64,6 +87,11 @@ export default function AdminCategories() {
   };
 
   const handleDelete = async (id: string) => {
+    if (categoryCounts[id] > 0) {
+      showNotification('No puedes eliminar una categoría que tiene publicaciones asociadas.', 'error');
+      return;
+    }
+
     try {
       await AdminCategoryService.remove(id);
       showNotification('Categoría eliminada.', 'success');
@@ -114,10 +142,15 @@ export default function AdminCategories() {
                     autoFocus
                   />
                 ) : (
-                  <span className={`font-bold ${cat.deletedAt ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
-                    {cat.name}
-                    {cat.deletedAt && <span className="ml-2 text-xs font-normal text-slate-400">(eliminada)</span>}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className={`font-bold ${cat.deletedAt ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                      {cat.name}
+                      {cat.deletedAt && <span className="ml-2 text-xs font-normal text-slate-400">(eliminada)</span>}
+                    </span>
+                    <span className="text-xs text-slate-500 mt-1">
+                      {categoryCounts[cat.id] !== undefined ? `${categoryCounts[cat.id]} publicaciones asociadas` : 'Cargando publicaciones...'}
+                    </span>
+                  </div>
                 )}
 
                 <div className="flex gap-2">

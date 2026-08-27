@@ -70,6 +70,14 @@ export default function Home() {
     });
   };
 
+  const searchHashtag = (tag: string) => {
+    setSearchParams(params => {
+      const next = new URLSearchParams(params);
+      next.set('hashtag', tag.replace(/^#/, ''));
+      return next;
+    });
+  };
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
@@ -89,6 +97,7 @@ export default function Home() {
           onSortChange={setSort}
           activeHashtag={hashtag || undefined}
           onClearHashtag={clearHashtag}
+          onSearchHashtag={searchHashtag}
         />
 
         {loading ? (
