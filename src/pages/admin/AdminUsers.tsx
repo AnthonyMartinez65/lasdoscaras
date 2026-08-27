@@ -88,9 +88,8 @@ export default function AdminUsers() {
                     <td className="px-4 py-3 text-slate-500">{u.email}</td>
                     <td className="px-4 py-3 text-slate-500">{u.role}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                        u.status === 'SUSPENDED' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                      }`}>
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${u.status === 'SUSPENDED' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                        }`}>
                         {u.status}
                       </span>
                     </td>
@@ -100,11 +99,10 @@ export default function AdminUsers() {
                           onConfirm={() => handleToggleBan(u)}
                           confirmLabel={u.status === 'SUSPENDED' ? '¿Desbanear?' : '¿Banear?'}
                           disabled={actingOn === u.id}
-                          className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
-                            u.status === 'SUSPENDED'
+                          className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${u.status === 'SUSPENDED'
                               ? 'bg-green-600 text-white hover:bg-green-700'
                               : 'bg-red-600 text-white hover:bg-red-700'
-                          }`}
+                            }`}
                         >
                           {u.status === 'SUSPENDED' ? 'Desbanear' : 'Banear'}
                         </ConfirmButton>

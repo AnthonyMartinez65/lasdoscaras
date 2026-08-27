@@ -74,9 +74,8 @@ export default function AdminViews() {
             <button
               key={f.label}
               onClick={() => setStatusFilter(f.value)}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
-                statusFilter === f.value ? 'bg-slate-800 text-white' : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${statusFilter === f.value ? 'bg-slate-800 text-white' : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'
+                }`}
             >
               {f.label}
             </button>
@@ -108,9 +107,8 @@ export default function AdminViews() {
                       <p className="text-xs text-slate-500">Por {view.author.name} · {view.category?.name}</p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                        view.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'
-                      }`}>
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${view.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'
+                        }`}>
                         {view.status}
                       </span>
                       {view.status === 'PUBLISHED' ? (
